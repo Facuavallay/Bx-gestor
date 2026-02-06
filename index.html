@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoardXperience - Sistema de Reservas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .houses-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        #historyResults>div:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+            border-color: #667eea !important;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            border-color: #667eea !important;
+            background: #f0f4ff !important;
+        }
+
+        .house-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .house-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .house-title {
+            font-size: 22px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .house-icon {
+            font-size: 24px;
+        }
+
+        .calendar {
+            margin-top: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .month-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .month-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #666;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            min-height: 80px;
+        }
+
+        .calendar-day:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+
+        .calendar-day.today {
+            background: #fff4e6;
+            border-color: #ff9800;
+        }
+
+        .day-number {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .beds-indicator {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .bed-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            background: #4caf50;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .bed-dot.occupied {
+            background: #f44336;
+        }
+
+        .bed-dot.checking-out {
+            background: linear-gradient(135deg, #f44336 50%, #4caf50 50%);
+        }
+
+        .bed-dot.checking-in {
+            background: linear-gradient(135deg, #4caf50 50%, #f44336 50%);
+        }
+
+        .bed-dot.shared {
+            background: linear-gradient(135deg, #f44336 48%, #fff 48%, #fff 52%, #f44336 52%);
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .reservation-pill:hover {
+            transform: scale(1.02);
+            filter: brightness(0.98);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-color: #4c51bf !important;
+        }
+
+        .history-row:hover {
+            background-color: #f3f4f6 !important;
+            border-color: #667eea !important;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .modal-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .beds-grid {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .bed-item {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .bed-item:hover {
+            border-color: #667eea;
+        }
+
+        .bed-item.occupied {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .bed-item.available {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .bed-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .bed-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .guest-name {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .bed-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .payment-section {
+            background: #f9fafb;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .payment-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .payment-value {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .payment-value.pending {
+            color: #f44336;
+        }
+
+        .payment-value.paid {
+            color: #4caf50;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .btn-block {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .houses-container {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-day {
+                min-height: 60px;
+            }
+
+            .day-number {
+                font-size: 12px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 BoardXperience - Sistema de Reservas</h1>
+            <p class="subtitle">Gestión de huéspedes y disponibilidad de casas</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="app.showNewReservation()">➕ Nueva Reserva</button>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-secondary" id="btnViewCalendar" onclick="app.setView('calendar')"
+                style="background: #667eea; color: white;">📅 Calendario</button>
+            <button class="btn btn-secondary" id="btnViewHistory" onclick="app.setView('history')">👤 Historial /
+                CRM</button>
+            <button class="btn btn-secondary" id="btnViewReports" onclick="app.setView('reports')">📊 Relatorio
+                Financiero</button>
+        </div>
+
+        <div id="calendarView">
+            <div class="houses-container" id="housesContainer"></div>
+        </div>
+
+        <div id="historyView" style="display: none;">
+            <div class="house-card">
+                <div class="house-header">
+                    <h2 class="house-title">👤 Historial de Huéspedes</h2>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <input type="text" id="historySearch" placeholder="Buscar por nombre, email o DNI..."
+                        oninput="app.renderHistory()" style="font-size: 16px; padding: 15px;">
+                </div>
+                <div id="historyResults" style="margin-top: 20px;">
+                    <!-- Los resultados se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+
+        <div id="reportsView" style="display: none;">
+            <div class="house-card">
+                <div class="house-header">
+                    <h2 class="house-title">📊 Relatorio Financiero</h2>
+                </div>
+                <div id="financialSummary"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <!-- Totales financieros se cargan aquí -->
+                </div>
+                <div style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">Desglose de Ingresos</h3>
+                    <div id="financialTable" style="overflow-x: auto;">
+                        <!-- Tabla de ingresos se carga aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="reservationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nueva Reserva</h2>
+                <p class="modal-subtitle" id="modalSubtitle"></p>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            houses: [
+                {
+                    id: 1,
+                    name: 'BoardXperience House',
+                    icon: '🏡',
+                    subtitle: 'Casa principal con habitaciones compartidas y privadas',
+                    rooms: [
+                        { id: 1, name: 'Dormitorio Triple', type: 'COMPARTIDA', beds: ['Cama Individual 1', 'Cama Individual 2', 'Cama 3'] },
+                        { id: 2, name: 'Cuarto Cama Doble', type: 'PRIVADA', beds: ['Cama Doble'] }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: 'Casa Vista Mar',
+                    icon: '🏘️',
+                    subtitle: 'Cabanha vista mar',
+                    rooms: [
+                        { id: 3, name: 'Dormitorio Doble', type: 'COMPARTIDA', beds: ['cama doble'] },
+                        { id: 4, name: 'casal', type: 'PRIVADA', beds: ['cama 1'] }
+                    ]
+                }
+            ],
+            currentMonth: new Date(),
+            reservations: [],
+            currentView: 'calendar', // 'calendar' o 'history'
+
+            setView(view) {
+                this.currentView = view;
+                document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
+                document.getElementById('historyView').style.display = view === 'history' ? 'block' : 'none';
+                document.getElementById('reportsView').style.display = view === 'reports' ? 'block' : 'none';
+
+                // Actualizar estilos de botones
+                document.getElementById('btnViewCalendar').style.background = view === 'calendar' ? '#667eea' : '#f0f0f0';
+                document.getElementById('btnViewCalendar').style.color = view === 'calendar' ? 'white' : '#333';
+                document.getElementById('btnViewHistory').style.background = view === 'history' ? '#667eea' : '#f0f0f0';
+                document.getElementById('btnViewHistory').style.color = view === 'history' ? 'white' : '#333';
+                document.getElementById('btnViewReports').style.background = view === 'reports' ? '#667eea' : '#f0f0f0';
+                document.getElementById('btnViewReports').style.color = view === 'reports' ? 'white' : '#333';
+
+                if (view === 'history') this.renderHistory();
+                else if (view === 'reports') this.renderReports();
+                else this.render();
+            },
+
+            async init() {
+                console.log('Iniciando aplicación...');
+                await this.loadFromSupabase();
+                this.render();
+            },
+
+            async loadFromSupabase() {
+                try {
+                    // Cargar casas
+                    const { data: houses, error: housesError } = await supabaseClient
+                        .from('houses')
+                        .select('*, rooms(*, beds(*))');
+
+                    if (housesError) throw housesError;
+                    if (houses && houses.length > 0) {
+                        this.houses = houses.map(h => ({
+                            id: h.id,
+                            name: h.name,
+                            icon: h.icon,
+                            subtitle: h.subtitle,
+                            rooms: h.rooms.map(r => ({
+                                id: r.id,
+                                name: r.name,
+                                type: r.type,
+                                beds: r.beds.map(b => ({ id: b.id, name: b.name }))
+                            }))
+                        }));
+                    } else {
+                        console.log('No se encontraron casas, iniciando migración automática...');
+                        await this.migrateInitialDataToSupabase();
+                        return;
+                    }
+
+                    // Cargar reservas
+                    const { data: reservations, error: resError } = await supabaseClient
+                        .from('reservations')
+                        .select('*');
+
+                    if (resError) throw resError;
+                    if (reservations) {
+                        this.reservations = reservations.map(r => {
+                            let houseId, roomId, bedIndex, bedName;
+                            for (const h of this.houses) {
+                                for (const room of h.rooms) {
+                                    const index = room.beds.findIndex(b => b.id === r.bed_id);
+                                    if (index !== -1) {
+                                        houseId = h.id;
+                                        roomId = room.id;
+                                        bedIndex = index;
+                                        bedName = room.beds[index].name;
+                                        break;
+                                    }
+                                }
+                                if (houseId) break;
+                            }
+
+                            return {
+                                id: r.id,
+                                bedId: r.bed_id,
+                                houseId,
+                                roomId,
+                                bedIndex,
+                                bedName,
+                                guestName: r.guest_name,
+                                email: r.guest_email,
+                                phone: r.guest_phone,
+                                checkIn: r.check_in,
+                                checkOut: r.check_out,
+                                status: r.status,
+                                paymentValue: r.payment_value,
+                                deposit: r.deposit,
+                                totalPaid: r.total_paid,
+                                packageType: r.package_type,
+                                surfLevel: r.surf_level,
+                                packageDays: r.package_days,
+                                dni: r.guest_dni,
+                                nationality: r.guest_nationality,
+                                birthdate: r.guest_birthdate,
+                                foodPreferences: r.food_preferences,
+                                paymentMethod: r.payment_method,
+                                paymentStatus: r.payment_status,
+                                notes: r.notes
+                            };
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error cargando desde Supabase:', error);
+                    alert('No se pudo conectar con Supabase. Usando datos locales.');
+                }
+            },
+
+            render() {
+                const container = document.getElementById('housesContainer');
+                if (!container) return;
+                container.innerHTML = this.houses.map(house => this.renderHouse(house)).join('');
+            },
+
+            renderHouse(house) {
+                const totalBeds = house.rooms.reduce((sum, room) => sum + room.beds.length, 0);
+                return `
+                    <div class="house-card">
+                        <div class="house-header">
+                            <h2 class="house-title">
+                                <span class="house-icon">${house.icon}</span>
+                                ${house.name}
+                            </h2>
+                            <span style="color: #666; font-size: 14px;">${totalBeds} camas</span>
+                        </div>
+                        <div style="margin-bottom: 15px; color: #666; font-size: 13px;">${house.subtitle}</div>
+                        ${this.renderRooms(house)}
+                        ${this.renderCalendar(house)}
+                    </div>
+                `;
+            },
+
+            renderRooms(house) {
+                return `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        ${house.rooms.map(room => `
+                            <div style="background: #f9fafb; border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <span style="font-weight: 600; color: #333;">🛏️ ${room.name}</span>
+                                    <span style="background: ${room.type === 'PRIVADA' ? '#dbeafe' : '#fef3c7'}; color: ${room.type === 'PRIVADA' ? '#1e40af' : '#92400e'}; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">${room.type}</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    ${room.beds.map((bed, index) => {
+                    const today = new Date().toISOString().split('T')[0];
+                    const guestExiting = this.reservations.find(r => r.bedId === bed.id && r.checkOut === today);
+                    const guestEntering = this.reservations.find(r => r.bedId === bed.id && r.checkIn === today);
+                    const guestStaying = this.reservations.find(r => r.bedId === bed.id && r.checkIn < today && r.checkOut > today);
+
+                    let statusColor = '#10b981'; // Default available (green)
+                    let statusText = 'Disponible';
+
+                    if (guestExiting && guestEntering) {
+                        statusColor = '#667eea'; // Transition (Indigo/Blue)
+                        statusText = `🔄 Sale ${guestExiting.guestName} / Entra ${guestEntering.guestName}`;
+                    } else if (guestExiting) {
+                        statusColor = '#f59e0b'; // Checking out (Orange)
+                        statusText = `📤 Sale: ${guestExiting.guestName}`;
+                    } else if (guestEntering) {
+                        statusColor = '#3b82f6'; // Checking in (Blue)
+                        statusText = `📥 Entra: ${guestEntering.guestName}`;
+                    } else if (guestStaying) {
+                        statusColor = '#ef4444'; // Occupied (Red)
+                        statusText = guestStaying.guestName;
+                    }
+
+                    const isAvailable = !guestExiting && !guestEntering && !guestStaying;
+                    return `
+                                            <div onclick="app.handleBedClick(${house.id}, ${room.id}, ${index}, '${bed.name}', '${bed.id}')" style="cursor: pointer; padding: 10px; background: white; border: 2px solid ${isAvailable ? '#10b981' : '#ef4444'}; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
+                                                <span style="font-size: 18px;">🛏️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-size: 14px; color: #333;">${bed.name}</div>
+                                                    <div style="font-size: 12px; color: ${statusColor}; display: flex; align-items: center; gap: 4px;">
+                                                        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusColor};"></span>
+                                                        ${statusText}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                }).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            handleBedClick(houseId, roomId, bedIndex, bedName, bedId) {
+                const today = new Date().toISOString().split('T')[0];
+                const reservation = this.reservations.find(r =>
+                    r.bedId === bedId &&
+                    r.checkIn <= today &&
+                    r.checkOut >= today
+                );
+
+                if (reservation) {
+                    this.editReservation(reservation.id);
+                } else {
+                    this.showReservationForm(houseId, today, roomId, bedIndex, bedName, null, bedId);
+                }
+            },
+
+            renderCalendar(house) {
+                const year = this.currentMonth.getFullYear();
+                const month = this.currentMonth.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const startingDayOfWeek = firstDay.getDay();
+
+                const monthName = firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+                let html = `
+                    <div class="calendar">
+                        <div class="calendar-header">
+                            <div class="month-nav">
+                                <button class="btn btn-secondary" onclick="app.previousMonth()">◀</button>
+                                <span class="month-title">${monthName}</span>
+                                <button class="btn btn-secondary" onclick="app.nextMonth()">▶</button>
+                            </div>
+                            <button class="btn btn-primary" onclick="app.currentMonthView()">Hoy</button>
+                        </div>
+                        <div class="calendar-grid">
+                            <div class="calendar-day-header">Dom</div>
+                            <div class="calendar-day-header">Lun</div>
+                            <div class="calendar-day-header">Mar</div>
+                            <div class="calendar-day-header">Mié</div>
+                            <div class="calendar-day-header">Jue</div>
+                            <div class="calendar-day-header">Vie</div>
+                            <div class="calendar-day-header">Sáb</div>
+                `;
+
+                for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                    html += `<div class="calendar-day other-month"></div>`;
+                }
+
+                const today = new Date();
+                for (let day = 1; day <= lastDay.getDate(); day++) {
+                    const date = new Date(year, month, day);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const isToday = date.toDateString() === today.toDateString();
+                    const visualStatuses = this.getHouseBedsVisualStatuses(house.id, dateStr);
+
+                    html += `
+                        <div class="calendar-day ${isToday ? 'today' : ''}" onclick="app.openDayView(${house.id}, '${dateStr}')">
+                            <div class="day-number">${day}</div>
+                            <div class="beds-indicator">
+                                ${this.renderBedDots(visualStatuses)}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #4caf50;"></div>
+                                <span>Disponible</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #f44336;"></div>
+                                <span>Ocupado</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: linear-gradient(135deg, #f44336 50%, #4caf50 50%); border-radius: 3px;"></div>
+                                <span>Check-out</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: linear-gradient(135deg, #4caf50 50%, #f44336 50%); border-radius: 3px;"></div>
+                                <span>Check-in</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: linear-gradient(135deg, #f44336 48%, #fff 48%, #fff 52%, #f44336 52%); border-radius: 3px;"></div>
+                                <span>Transición</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                return html;
+            },
+
+            getBedStatus(houseId, date) {
+                return this.reservations.filter(r =>
+                    r.houseId === houseId &&
+                    r.checkIn <= date &&
+                    r.checkOut >= date
+                );
+            },
+
+            getHouseBedsVisualStatuses(houseId, date) {
+                const house = this.houses.find(h => h.id === houseId);
+                if (!house) return [];
+
+                const statuses = [];
+                house.rooms.forEach(room => {
+                    room.beds.forEach(bed => {
+                        const isCheckingOut = this.reservations.some(r => r.bedId === bed.id && r.checkOut === date);
+                        const isCheckingIn = this.reservations.some(r => r.bedId === bed.id && r.checkIn === date);
+                        const isStaying = this.reservations.some(r => r.bedId === bed.id && r.checkIn < date && r.checkOut > date);
+
+                        let status = 'available';
+                        if (isCheckingOut && isCheckingIn) status = 'shared';
+                        else if (isCheckingOut) status = 'checking-out';
+                        else if (isCheckingIn) status = 'checking-in';
+                        else if (isStaying) status = 'occupied';
+
+                        statuses.push(status);
+                    });
+                });
+                return statuses;
+            },
+
+            getTotalBedsForHouse(houseId) {
+                const house = this.houses.find(h => h.id === houseId);
+                return house ? house.rooms.reduce((sum, room) => sum + room.beds.length, 0) : 0;
+            },
+
+            renderBedDots(statuses) {
+                return statuses.map(status => `
+                    <div class="bed-dot ${status !== 'available' ? status : ''}" title="${this.getStatusText(status)}"></div>
+                `).join('');
+            },
+
+            getStatusText(status) {
+                const texts = {
+                    'available': 'Disponible',
+                    'occupied': 'Ocupado',
+                    'checking-out': 'Check-out hoy',
+                    'checking-in': 'Check-in hoy',
+                    'shared': 'Transición (Salida/Entrada)'
+                };
+                return texts[status] || status;
+            },
+
+            openDayView(houseId, date) {
+                const house = this.houses.find(h => h.id === houseId);
+                const reservations = this.getBedStatus(houseId, date);
+                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                document.getElementById('modalTitle').textContent = house.name;
+                document.getElementById('modalSubtitle').textContent = formattedDate;
+
+                let bedsHtml = '<div style="margin-bottom: 20px;">';
+
+                house.rooms.forEach(room => {
+                    bedsHtml += `
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #667eea;">🛏️ ${room.name}</div>
+                            <div class="beds-grid">
+                                ${room.beds.map((bed, index) => {
+                        const bedReservations = reservations.filter(r => r.bedId === bed.id);
+                        const isOccupied = bedReservations.length > 0;
+
+                        return `
+                                        <div class="bed-item ${isOccupied ? 'occupied' : 'available'}" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span class="bed-name">${bed.name}</span>
+                                                <span class="bed-status" style="background: ${isOccupied ? '#fdecea' : '#edf7ee'}; color: ${isOccupied ? '#d32f2f' : '#2e7d32'};">
+                                                    ${isOccupied ? 'Ocupado' : 'Libre'}
+                                                </span>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                                ${isOccupied ? bedReservations.map(res => {
+                            let label = '';
+                            if (res.checkOut === date && res.checkIn === date) label = '🔄';
+                            else if (res.checkOut === date) label = '📤';
+                            else if (res.checkIn === date) label = '📥';
+
+                            return `
+                                                        <div onclick="app.editReservation('${res.id}')" class="reservation-pill" style="cursor: pointer; padding: 10px; background: white; border: 1px solid #667eea; border-left: 5px solid #667eea; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 5px; transition: transform 0.2s;">
+                                                            <div style="display: flex; flex-direction: column;">
+                                                                <span style="font-weight: 700; color: #333;">${label} ${res.guestName}</span>
+                                                                <span style="color: #666; font-size: 11px;">${res.checkIn} a ${res.checkOut}</span>
+                                                            </div>
+                                                            <span style="background: #eef2ff; color: #667eea; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 20px;">✏️ EDITAR</span>
+                                                        </div>
+                                                    `;
+                        }).join('') : `
+                                                    <div onclick="app.showReservationForm(${house.id}, '${date}', ${room.id}, ${index}, '${bed.name}', null, '${bed.id}')" style="cursor: pointer; padding: 8px; background: white; border: 1px dashed #4caf50; border-radius: 6px; text-align: center; color: #4caf50; font-size: 13px;">
+                                                        + Crear Reserva
+                                                    </div>
+                                                `}
+                                            </div>
+                                        </div>
+                                    `;
+                    }).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                bedsHtml += '</div>';
+                bedsHtml += `
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary btn-block" onclick="app.closeModal()">Cerrar</button>
+                        <button class="btn btn-primary btn-block" onclick="app.showFullHouseForm(${houseId}, '${date}')">🏠 Reservar Toda la Casa</button>
+                    </div>
+                `;
+
+                document.getElementById('modalBody').innerHTML = bedsHtml;
+                document.getElementById('reservationModal').classList.add('active');
+            },
+
+            handleBedClickInModal(houseId, date, roomId, bedIndex, bedName, reservationId, bedId) {
+                if (reservationId) {
+                    this.editReservation(reservationId);
+                } else {
+                    this.showReservationForm(houseId, date, roomId, bedIndex, bedName, null, bedId);
+                }
+            },
+
+            showReservationForm(houseId, date, roomId, bedIndex, bedName, existingRes, bedId) {
+                const title = existingRes ? 'Editar Reserva' : 'Nueva Reserva';
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalSubtitle').textContent = `${bedName} - ${date}`;
+
+                const res = existingRes || {
+                    guestName: '',
+                    email: '',
+                    phone: '',
+                    dni: '',
+                    nationality: '',
+                    birthdate: '',
+                    foodPreferences: '',
+                    paymentMethod: 'efectivo',
+                    paymentStatus: 'pendiente',
+                    checkIn: date,
+                    checkOut: date,
+                    status: 'ocupado',
+                    paymentValue: 0,
+                    totalPaid: 0,
+                    packageType: 'solo_hospedaje',
+                    surf_level: 'principiante',
+                    packageDays: 0,
+                    notes: ''
+                };
+
+                let formHtml = `
+                    <div class="form-section">
+                        <div class="section-title">📅 Fechas de Estancia</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Check-in *</label>
+                                <input type="date" id="checkIn" value="${res.checkIn}" onchange="app.updateNightsAndBeds()">
+                            </div>
+                            <div class="form-group">
+                                <label>Check-out *</label>
+                                <input type="date" id="checkOut" value="${res.checkOut}" onchange="app.updateNightsAndBeds()">
+                            </div>
+                            <div class="form-group">
+                                <label>Noches</label>
+                                <div id="nightsCount" style="padding: 10px; background: #f0f7ff; border-radius: 8px; font-weight: 700; color: #004a99; text-align: center; border: 1px solid #cce3ff;">
+                                    -
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">📍 Ubicación (Solo Disponibles)</div>
+                        <div class="form-group">
+                            <label>Casa</label>
+                            <select id="selectHouse" onchange="app.updateRoomDropdown()">
+                                ${this.houses.map(h => `<option value="${h.id}" ${h.id == houseId ? 'selected' : ''}>${h.icon} ${h.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Habitación</label>
+                                <select id="selectRoom" onchange="app.updateBedDropdown()">
+                                    <!-- Se llena dinámicamente -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cama / Slot</label>
+                                <select id="selectBed">
+                                    <!-- Se llena dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">👤 Información del Huésped</div>
+                        <div class="form-group">
+                            <label>Nombre Completo *</label>
+                            <input type="text" id="guestName" value="${res.guestName}" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>DNI / Pasaporte</label>
+                                <input type="text" id="guestDni" value="${res.dni || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Nacionalidad</label>
+                                <input type="text" id="guestNationality" value="${res.nationality || ''}">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="guestEmail" value="${res.email || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="guestPhone" value="${res.phone || ''}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Nacimiento</label>
+                            <input type="date" id="guestBirthdate" value="${res.birthdate || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Notas / Requerimientos</label>
+                            <textarea id="notes" rows="2">${res.notes || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Preferencias Alimentarias / Alergias</label>
+                            <input type="text" id="foodPreferences" value="${res.foodPreferences || ''}" placeholder="Ej: Vegano, Alergia al gluten...">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">🏄 Pack & Surf</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tipo de Pack</label>
+                                <select id="packageType">
+                                    <option value="solo_hospedaje" ${res.packageType === 'solo_hospedaje' ? 'selected' : ''}>Solo Hospedaje</option>
+                                    <option value="surf_camp" ${res.packageType === 'surf_camp' ? 'selected' : ''}>Surf Camp</option>
+                                    <option value="premium" ${res.packageType === 'premium' ? 'selected' : ''}>Premium</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Nivel de Surf</label>
+                                <select id="surfLevel">
+                                    <option value="principiante" ${res.surfLevel === 'principiante' ? 'selected' : ''}>Principiante</option>
+                                    <option value="intermedio" ${res.surfLevel === 'intermedio' ? 'selected' : ''}>Intermedio</option>
+                                    <option value="avanzado" ${res.surfLevel === 'avanzado' ? 'selected' : ''}>Avanzado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Días de Pack</label>
+                            <input type="number" id="packageDays" value="${res.packageDays || 0}" min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">💳 Pagos (R$)</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Precio Total</label>
+                                <input type="number" id="totalPrice" value="${res.paymentValue}" step="0.01" oninput="app.calculateBalance()">
+                            </div>
+                            <div class="form-group">
+                                <label>Pagado Hoy / Abono</label>
+                                <input type="number" id="addPayment" value="0" step="0.01" placeholder="Sumar pago..." oninput="app.calculateBalance()">
+                            </div>
+                            <div class="form-group">
+                                <label>Total Pagado (Acumulado)</label>
+                                <input type="number" id="totalPaid" value="${res.totalPaid}" step="0.01" oninput="app.calculateBalance()">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Método de Pago</label>
+                                <select id="paymentMethod">
+                                    <option value="efectivo" ${res.paymentMethod === 'efectivo' ? 'selected' : ''}>💸 Efectivo</option>
+                                    <option value="transferencia" ${res.paymentMethod === 'transferencia' ? 'selected' : ''}>🏦 Transferencia</option>
+                                    <option value="tarjeta" ${res.paymentMethod === 'tarjeta' ? 'selected' : ''}>💳 Tarjeta</option>
+                                    <option value="pix" ${res.paymentMethod === 'pix' ? 'selected' : ''}>📱 PIX / Digital</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Estado del Pago</label>
+                                <select id="paymentStatus">
+                                    <option value="pendiente" ${res.paymentStatus === 'pendiente' ? 'selected' : ''}>🔴 Pendiente</option>
+                                    <option value="parcial" ${res.paymentStatus === 'parcial' ? 'selected' : ''}>🟡 Pago Parcial</option>
+                                    <option value="pagado" ${res.paymentStatus === 'pagado' ? 'selected' : ''}>🟢 Pagado Total</option>
+                                    <option value="cancelado" ${res.paymentStatus === 'cancelado' ? 'selected' : ''}>⚪ Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="payment-section">
+                            <div class="payment-row">
+                                <span class="payment-label">Total:</span>
+                                <span class="payment-value" id="displayTotal">R$ ${res.paymentValue.toFixed(2)}</span>
+                            </div>
+                            <div class="payment-row">
+                                <span class="payment-label">Pagado:</span>
+                                <span class="payment-value paid" id="displayPaid">R$ ${res.totalPaid.toFixed(2)}</span>
+                            </div>
+                            <div class="payment-row" style="border-top: 1px solid #e0e0e0; margin-top: 5px; padding-top: 10px;">
+                                <span class="payment-label">Saldo Pendiente:</span>
+                                <span class="payment-value pending" id="displayBalance">R$ ${(res.paymentValue - res.totalPaid).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">📝 Otros Detalles</div>
+                        <div class="form-group">
+                            <label>Restricciones Alimentarias / Alergias</label>
+                            <input type="text" id="foodPreferences" value="${res.foodPreferences || ''}" placeholder="Ej: Celíaco, Vegano, Alergia a nueces...">
+                        </div>
+                        <div class="form-group">
+                            <label>Notas</label>
+                            <textarea id="notes" rows="3">${res.notes || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="app.closeModal()">Cancelar</button>
+                        ${existingRes ? `<button class="btn btn-danger" onclick="app.deleteReservation('${res.id}')">Eliminar</button>` : ''}
+                        <button class="btn btn-primary" onclick="app.saveReservation(${existingRes ? "'" + res.id + "'" : 'null'})">Guardar Reserva</button>
+                    </div>
+                `;
+                document.getElementById('modalBody').innerHTML = formHtml;
+
+                // Inicializar dropdowns de ubicación
+                this.updateRoomDropdown(roomId);
+                this.updateBedDropdown(bedId);
+                this.updateNightsAndBeds();
+
+                document.getElementById('reservationModal').classList.add('active');
+            },
+
+            updateNightsAndBeds() {
+                const checkInEl = document.getElementById('checkIn');
+                const checkOutEl = document.getElementById('checkOut');
+                const nightCountEl = document.getElementById('nightsCount');
+
+                if (!checkInEl || !checkOutEl || !nightCountEl) return;
+
+                const checkIn = checkInEl.value;
+                const checkOut = checkOutEl.value;
+
+                if (checkIn && checkOut) {
+                    const start = new Date(checkIn);
+                    const end = new Date(checkOut);
+                    const diff = end - start;
+                    const nights = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+                    if (nights > 0) {
+                        nightCountEl.textContent = `${nights} ${nights === 1 ? 'Noche' : 'Noches'}`;
+                        nightCountEl.style.background = '#e6fffa';
+                        nightCountEl.style.color = '#2c7a7b';
+                    } else if (nights === 0) {
+                        nightCountEl.textContent = 'Mismo día';
+                        nightCountEl.style.background = '#fffaf0';
+                        nightCountEl.style.color = '#975a16';
+                    } else {
+                        nightCountEl.textContent = 'Error fechas';
+                        nightCountEl.style.background = '#fff5f5';
+                        nightCountEl.style.color = '#c53030';
+                    }
+                }
+
+                // Forzar actualización de camas para ver disponibilidad en estas fechas
+                this.updateBedDropdown(document.getElementById('selectBed')?.value);
+            },
+
+            editReservation(id) {
+                const res = this.reservations.find(r => r.id === id);
+                if (res) {
+                    const house = this.houses.find(h => h.id === res.houseId);
+                    const room = house ? house.rooms.find(r => r.id === res.roomId) : null;
+                    const bed = room ? room.beds[res.bedIndex] : { name: res.bedName };
+                    this.showReservationForm(res.houseId, res.checkIn, res.roomId, res.bedIndex, bed.name, res, res.bedId);
+                }
+            },
+
+            generateId() {
+                try {
+                    return crypto.randomUUID();
+                } catch (e) {
+                    return 'res-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                }
+            },
+
+            updateRoomDropdown(selectedRoomId = null) {
+                const selectHouse = document.getElementById('selectHouse');
+                if (!selectHouse) return;
+
+                const houseId = selectHouse.value;
+                const house = this.houses.find(h => h.id == houseId);
+                const roomSelect = document.getElementById('selectRoom');
+
+                if (house && roomSelect) {
+                    roomSelect.innerHTML = house.rooms.map(r =>
+                        `<option value="${r.id}" ${r.id == selectedRoomId ? 'selected' : ''}>${r.name} (${r.type})</option>`
+                    ).join('');
+                }
+                this.updateBedDropdown();
+            },
+
+            updateBedDropdown(selectedBedId = null) {
+                const selectHouse = document.getElementById('selectHouse');
+                const selectRoom = document.getElementById('selectRoom');
+                const checkInEl = document.getElementById('checkIn');
+                const checkOutEl = document.getElementById('checkOut');
+                const bedSelect = document.getElementById('selectBed');
+
+                if (!selectHouse || !selectRoom || !checkInEl || !checkOutEl || !bedSelect) return;
+
+                const houseId = selectHouse.value;
+                const roomId = selectRoom.value;
+                const checkIn = checkInEl.value;
+                const checkOut = checkOutEl.value;
+
+                const house = this.houses.find(h => h.id == houseId);
+                const room = house ? house.rooms.find(r => r.id == roomId) : null;
+
+                if (room) {
+                    bedSelect.innerHTML = room.beds.map(b => {
+                        // Verificar si la cama está ocupada en estas fechas
+                        const isOccupied = this.reservations.some(r =>
+                            r.bedId === b.id &&
+                            r.checkIn < checkOut &&
+                            r.checkOut > checkIn
+                        );
+
+                        const label = isOccupied ? `❌ ${b.name} (Ocupado)` : `✅ ${b.name} (Disponible)`;
+                        return `<option value="${b.id}" ${b.id == selectedBedId ? 'selected' : ''} ${isOccupied ? 'disabled style="color:red;"' : ''}>${label}</option>`;
+                    }).join('');
+                }
+            },
+
+            async saveReservation(existingId) {
+                console.log('Iniciando guardado de reserva...', { existingId });
+
+                const guestName = document.getElementById('guestName').value;
+                const checkIn = document.getElementById('checkIn').value;
+                const checkOut = document.getElementById('checkOut').value;
+
+                // Obtener datos de ubicación seleccionados
+                const houseSelect = document.getElementById('selectHouse');
+                const roomSelect = document.getElementById('selectRoom');
+                const bedSelect = document.getElementById('selectBed');
+
+                if (!houseSelect || !roomSelect || !bedSelect) return;
+
+                const houseId = houseSelect.value;
+                const roomId = roomSelect.value;
+                const bedId = bedSelect.value;
+
+                const house = this.houses.find(h => h.id == houseId);
+                const room = house ? house.rooms.find(r => r.id == roomId) : null;
+
+                if (!house || !room) {
+                    alert('❌ Error al localizar la Casa o Habitación. Por favor intenta de nuevo.');
+                    return;
+                }
+
+                const bedIndex = room.beds.findIndex(b => b.id === bedId);
+                const bedName = bedIndex !== -1 ? room.beds[bedIndex].name : 'Cama Desconocida';
+
+                if (!guestName || !checkIn || !checkOut) {
+                    alert('⚠️ Por favor completa los campos obligatorios (Nombre, Check-in, Check-out)');
+                    return;
+                }
+
+                if (checkIn >= checkOut) {
+                    alert('⚠️ La fecha de salida debe ser posterior a la de entrada.');
+                    return;
+                }
+
+                // Validar solapamientos (excepto si es la misma reserva que estamos editando)
+                const overlapping = this.reservations.find(r =>
+                    r.bedId === bedId &&
+                    r.id !== existingId &&
+                    r.checkIn < checkOut &&
+                    r.checkOut > checkIn
+                );
+
+                if (overlapping) {
+                    alert(`❌ ¡Error! El Slot ya está ocupado por ${overlapping.guestName} entre ${overlapping.checkIn} y ${overlapping.checkOut}.`);
+                    return;
+                }
+
+                const reservation = {
+                    id: existingId || this.generateId(),
+                    bedId,
+                    guestName,
+                    dni: document.getElementById('guestDni')?.value || '',
+                    nationality: document.getElementById('guestNationality')?.value || '',
+                    email: document.getElementById('guestEmail')?.value || '',
+                    phone: document.getElementById('guestPhone')?.value || '',
+                    birthdate: document.getElementById('guestBirthdate')?.value || '',
+                    foodPreferences: document.getElementById('foodPreferences')?.value || '',
+                    paymentMethod: document.getElementById('paymentMethod')?.value || 'efectivo',
+                    paymentStatus: document.getElementById('paymentStatus')?.value || 'pendiente',
+                    checkIn,
+                    checkOut,
+                    status: 'ocupado',
+                    paymentValue: parseFloat(document.getElementById('totalPrice')?.value || 0),
+                    totalPaid: (parseFloat(document.getElementById('totalPaid')?.value || 0)) + (parseFloat(document.getElementById('addPayment')?.value || 0)),
+                    packageType: document.getElementById('packageType')?.value || 'solo_hospedaje',
+                    surfLevel: document.getElementById('surfLevel')?.value || 'principiante',
+                    packageDays: parseInt(document.getElementById('packageDays')?.value || 0),
+                    notes: document.getElementById('notes')?.value || '',
+                    houseId,
+                    roomId,
+                    bedIndex,
+                    bedName
+                };
+
+                try {
+                    const success = await this.syncReservationToSupabase(reservation);
+                    if (success) {
+                        if (existingId) {
+                            this.reservations = this.reservations.map(r => r.id === existingId ? reservation : r);
+                        } else {
+                            this.reservations.push(reservation);
+                        }
+                        this.saveData();
+                        this.closeModal();
+                        this.render();
+                        console.log('Reserva guardada con éxito');
+                    } else {
+                        throw new Error('No se pudo sincronizar con la base de datos.');
+                    }
+                } catch (error) {
+                    console.error('Error al guardar reserva:', error);
+                    alert('❌ Error al guardar la reserva. Verifica la conexión con Supabase.');
+                }
+            },
+
+            calculateBalance() {
+                const totalPrice = parseFloat(document.getElementById('totalPrice')?.value || 0);
+                const currentTotalPaid = parseFloat(document.getElementById('totalPaid')?.value || 0);
+                const addPayment = parseFloat(document.getElementById('addPayment')?.value || 0);
+
+                const newTotalPaid = currentTotalPaid + addPayment;
+                const balance = totalPrice - newTotalPaid;
+
+                if (document.getElementById('displayTotal')) {
+                    document.getElementById('displayTotal').textContent = `R$ ${totalPrice.toFixed(2)}`;
+                    document.getElementById('displayPaid').textContent = `R$ ${newTotalPaid.toFixed(2)}`;
+                    document.getElementById('displayBalance').textContent = `R$ ${balance.toFixed(2)}`;
+
+                    // Actualizar campo oculto o acumulado al guardar podemos capturar esto
+                }
+            },
+
+            renderReports() {
+                const container = document.getElementById('financialSummary');
+                const tableContainer = document.getElementById('financialTable');
+                if (!container || !tableContainer) return;
+
+                let totalExpected = 0;
+                let totalCollected = 0;
+                let totalPending = 0;
+                let totalReservations = 0;
+                let totalCancelled = 0;
+
+                const statusStats = {
+                    efectivo: 0,
+                    transferencia: 0,
+                    tarjeta: 0,
+                    pix: 0
+                };
+
+                this.reservations.forEach(r => {
+                    if (r.paymentStatus === 'cancelado') {
+                        totalCancelled++;
+                        return;
+                    }
+
+                    totalReservations++;
+                    totalExpected += (r.paymentValue || 0);
+                    totalCollected += (r.totalPaid || 0);
+
+                    if (r.paymentMethod && statusStats[r.paymentMethod] !== undefined) {
+                        statusStats[r.paymentMethod] += (r.totalPaid || 0);
+                    }
+                });
+
+                totalPending = totalExpected - totalCollected;
+
+                // Render Summary Cards
+                container.innerHTML = `
+                    <div style="background: #ebf5ff; padding: 20px; border-radius: 12px; border-left: 5px solid #3b82f6;">
+                        <div style="font-size: 14px; color: #1e40af; font-weight: 600;">Ingresos Totales</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #1e3a8a; margin-top: 5px;">R$ ${totalExpected.toFixed(2)}</div>
+                    </div>
+                    <div style="background: #ecfdf5; padding: 20px; border-radius: 12px; border-left: 5px solid #10b981;">
+                        <div style="font-size: 14px; color: #065f46; font-weight: 600;">Cobrado (Caja)</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #064e3b; margin-top: 5px;">R$ ${totalCollected.toFixed(2)}</div>
+                    </div>
+                    <div style="background: #fff1f2; padding: 20px; border-radius: 12px; border-left: 5px solid #f43f5e;">
+                        <div style="font-size: 14px; color: #9f1239; font-weight: 600;">Pendiente de Cobro</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #881337; margin-top: 5px;">R$ ${totalPending.toFixed(2)}</div>
+                    </div>
+                    <div style="background: #f3f4f6; padding: 20px; border-radius: 12px; border-left: 5px solid #6b7280;">
+                        <div style="font-size: 14px; color: #374151; font-weight: 600;">Reservas Activas</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #111827; margin-top: 5px;">${totalReservations}</div>
+                    </div>
+                `;
+
+                // Render Table
+                tableContainer.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+                        <thead>
+                            <tr style="background: #f8fafc; text-align: left; color: #64748b; font-weight: 600;">
+                                <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Huésped</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Fechas</th>
+                                <th style="padding: 12px; border-bottom: 20x solid #e2e8f0;">Total</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Pagado</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Saldo</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Método</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${this.reservations.sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map(r => `
+                                <tr style="border-bottom: 1px solid #f1f5f9; hover: background: #f8fafc;">
+                                    <td style="padding: 12px; font-weight: 600;">${r.guestName}</td>
+                                    <td style="padding: 12px; color: #666;">${r.checkIn} / ${r.checkOut}</td>
+                                    <td style="padding: 12px; font-weight: 700;">R$ ${r.paymentValue.toFixed(2)}</td>
+                                    <td style="padding: 12px; color: #10b981; font-weight: 600;">R$ ${r.totalPaid.toFixed(2)}</td>
+                                    <td style="padding: 12px; color: ${r.paymentValue - r.totalPaid > 0 ? '#f43f5e' : '#10b981'}; font-weight: 700;">
+                                        R$ ${(r.paymentValue - r.totalPaid).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px; text-transform: capitalize;">${r.paymentMethod || 'Efectivo'}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; 
+                                            background: ${this.getPaymentStatusBg(r.paymentStatus)}; 
+                                            color: ${this.getPaymentStatusColor(r.paymentStatus)};">
+                                            ${(r.paymentStatus || 'pendiente').toUpperCase()}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            },
+
+            getPaymentStatusBg(status) {
+                switch (status) {
+                    case 'pagado': return '#d1fae5';
+                    case 'parcial': return '#fef3c7';
+                    case 'cancelado': return '#f3f4f6';
+                    default: return '#fee2e2';
+                }
+            },
+
+            getPaymentStatusColor(status) {
+                switch (status) {
+                    case 'pagado': return '#065f46';
+                    case 'parcial': return '#92400e';
+                    case 'cancelado': return '#374151';
+                    default: return '#991b1b';
+                }
+            },
+
+            showFullHouseForm(houseId, date) {
+                const house = this.houses.find(h => h.id === houseId);
+                document.getElementById('modalTitle').textContent = `Casa Completa: ${house.name}`;
+                document.getElementById('modalSubtitle').textContent = `Iniciando el ${date}`;
+
+                let formHtml = `
+                    <div class="form-section">
+                        <div class="section-title">📅 Periodo de Estancia</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Check-in</label>
+                                <input type="date" id="fhCheckIn" value="${date}">
+                            </div>
+                            <div class="form-group">
+                                <label>Check-out</label>
+                                <input type="date" id="fhCheckOut" value="${date}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">👥 Huéspedes del Grupo</div>
+                        <div id="fhGuestList">
+                            <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" placeholder="Nombre completo del huésped" class="fh-guest-name">
+                                <button class="btn btn-secondary" onclick="this.parentElement.remove()" style="padding: 5px 10px;">✕</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="app.addGuestRow()" style="width: 100%; margin-top: 5px;">+ Añadir Huésped</button>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">💳 Finanzas del Grupo</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Precio Total Casa (R$)</label>
+                                <input type="number" id="fhTotal" value="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Total Pagado (R$)</label>
+                                <input type="number" id="fhPaid" value="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notas del Grupo</label>
+                            <textarea id="fhNotes" rows="2" placeholder="Ej: Reserva de grupo de Surf de Argentina"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="app.closeModal()">Cancelar</button>
+                        <button class="btn btn-primary" onclick="app.saveFullHouseReservation(${houseId})">Confirmar Reserva Casa Completa</button>
+                    </div>
+                `;
+                document.getElementById('modalBody').innerHTML = formHtml;
+                document.getElementById('reservationModal').classList.add('active');
+            },
+
+            addGuestRow() {
+                const container = document.getElementById('fhGuestList');
+                if (!container) return;
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.style = 'display: flex; gap: 10px; margin-bottom: 10px;';
+                div.innerHTML = `
+                    <input type="text" placeholder="Nombre completo del huésped" class="fh-guest-name">
+                    <button class="btn btn-secondary" onclick="this.parentElement.remove()" style="padding: 5px 10px;">✕</button>
+                `;
+                container.appendChild(div);
+            },
+
+            async saveFullHouseReservation(houseId) {
+                const checkIn = document.getElementById('fhCheckIn').value;
+                const checkOut = document.getElementById('fhCheckOut').value;
+                const totalPrice = parseFloat(document.getElementById('fhTotal').value) || 0;
+                const totalPaid = parseFloat(document.getElementById('fhPaid').value) || 0;
+                const notes = document.getElementById('fhNotes').value;
+
+                const guestInputs = document.querySelectorAll('.fh-guest-name');
+                const guests = Array.from(guestInputs).map(i => i.value).filter(v => v.trim() !== '');
+
+                if (guests.length === 0) {
+                    alert('Por favor, indica al menos un nombre para el grupo.');
+                    return;
+                }
+
+                if (checkIn >= checkOut) {
+                    alert('La fecha de salida debe ser posterior a la de entrada.');
+                    return;
+                }
+
+                const overlapping = this.reservations.filter(r =>
+                    r.houseId === houseId &&
+                    ((r.checkIn < checkOut && r.checkOut > checkIn))
+                );
+
+                if (overlapping.length > 0) {
+                    const names = [...new Set(overlapping.map(r => r.guestName))].join(', ');
+                    alert(`No se puede reservar la casa completa:\n\nYa existen reservas para: ${names} en este periodo.\n\nPara reservar la casa completa, primero debes estar seguro de que las fechas estén totalmente libres.`);
+                    return;
+                }
+
+                const house = this.houses.find(h => h.id === houseId);
+                const groupId = crypto.randomUUID();
+                const guestListStr = "GRUPO: " + guests.join(', ');
+
+                for (const room of house.rooms) {
+                    for (const [bedIndex, bed] of room.beds.entries()) {
+                        const reservation = {
+                            id: crypto.randomUUID(),
+                            bedId: bed.id,
+                            guestName: guests[0] + " (Casa Completa)",
+                            checkIn,
+                            checkOut,
+                            status: 'ocupado',
+                            paymentValue: (room.id === house.rooms[0].id && bedIndex === 0) ? totalPrice : 0,
+                            totalPaid: (room.id === house.rooms[0].id && bedIndex === 0) ? totalPaid : 0,
+                            notes: `CASA COMPLETA | ${guestListStr} | ${notes}`,
+                            houseId,
+                            roomId: room.id,
+                            bedIndex,
+                            bedName: bed.name,
+                            fullHouseGroupId: groupId
+                        };
+
+                        this.reservations.push(reservation);
+                        await this.syncReservationToSupabase(reservation);
+                    }
+                }
+
+                this.saveData();
+                this.closeModal();
+                this.render();
+                alert('Casa completa reservada con éxito.');
+            },
+
+            renderHistory() {
+                const search = document.getElementById('historySearch').value.toLowerCase();
+                const container = document.getElementById('historyResults');
+                if (!container) return;
+
+                // Agrupar reservas por Huésped (usando Nombre + DNI como clave única)
+                const guests = {};
+                this.reservations.forEach(r => {
+                    const key = `${r.guestName.toLowerCase()}_${(r.dni || '').toLowerCase()}`;
+                    if (!guests[key]) {
+                        guests[key] = {
+                            name: r.guestName,
+                            dni: r.dni,
+                            email: r.email,
+                            phone: r.phone,
+                            nationality: r.nationality,
+                            birthdate: r.birthdate,
+                            food: r.foodPreferences,
+                            history: [],
+                            totalDays: 0,
+                            totalSpent: 0
+                        };
+                    }
+
+                    // Calcular días
+                    const start = new Date(r.checkIn);
+                    const end = new Date(r.checkOut);
+                    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+                    guests[key].history.push({
+                        ...r,
+                        days
+                    });
+                    guests[key].totalDays += days;
+                    guests[key].totalSpent += (r.paymentValue || 0);
+                });
+
+                // Filtrar por búsqueda
+                const filteredKeys = Object.keys(guests).filter(key => {
+                    const g = guests[key];
+                    return g.name.toLowerCase().includes(search) ||
+                        (g.email || '').toLowerCase().includes(search) ||
+                        (g.dni || '').toLowerCase().includes(search);
+                });
+
+                if (filteredKeys.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: #666;">No se encontraron huéspedes con "${search}"</div>`;
+                    return;
+                }
+
+                container.innerHTML = filteredKeys.map(key => {
+                    const g = guests[key];
+                    return `
+                        <div style="background: #f9fafb; border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="color: #333; font-size: 18px; margin-bottom: 5px;">${g.name}</h3>
+                                    <div style="display: flex; gap: 15px; font-size: 13px; color: #666;">
+                                        <span>🆔 DNI: ${g.dni || 'No reg.'}</span>
+                                        <span>🌍 ${g.nationality || 'Sin nac.'}</span>
+                                        <span>📧 ${g.email || '-'}</span>
+                                        <span>📱 ${g.phone || '-'}</span>
+                                    </div>
+                                    ${g.food ? `<div style="margin-top: 8px; font-size: 13px; color: #d32f2f; font-weight: 600;">🥑 Preferencias: ${g.food}</div>` : ''}
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 20px; font-weight: 700; color: #667eea;">${g.totalDays} noches</div>
+                                    <div style="font-size: 14px; color: #10b981; font-weight: 600;">Total: R$ ${g.totalSpent.toFixed(2)}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="border-top: 1px solid #e0e0e0; padding-top: 15px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #999; margin-bottom: 10px; text-transform: uppercase;">Estancias Anteriores</div>
+                                <div style="display: grid; gap: 10px;">
+                                    ${g.history.sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map(h => `
+                                        <div onclick="app.editReservation('${h.id}')" style="cursor: pointer; background: white; padding: 12px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; hover: border-color: #667eea;">
+                                            <div>
+                                                <span style="font-weight: 600; color: #333;">${h.checkIn} al ${h.checkOut}</span>
+                                                <span style="margin: 0 10px; color: #ccc;">|</span>
+                                                <span style="color: #666;">${h.bedName}</span>
+                                                <span style="margin: 0 10px; color: #ccc;">|</span>
+                                                <span style="background: #eef2ff; color: #6366f1; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${h.packageType}</span>
+                                            </div>
+                                            <div style="font-size: 14px; font-weight: 600; color: #333;">R$ ${h.paymentValue.toFixed(2)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            async deleteReservation(id) {
+                if (confirm('¿Eliminar esta reserva?')) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('reservations')
+                            .delete()
+                            .eq('id', id);
+
+                        if (error) throw error;
+
+                        this.reservations = this.reservations.filter(r => r.id !== id);
+                        this.saveData();
+                        this.closeModal();
+                        this.render();
+                    } catch (error) {
+                        console.error('Error eliminando de Supabase:', error);
+                        alert('Error al eliminar en Supabase');
+                    }
+                }
+            },
+
+            showNewReservation() {
+                const today = new Date().toISOString().split('T')[0];
+                if (this.houses && this.houses.length > 0) {
+                    const house = this.houses[0];
+                    const room = house.rooms[0];
+                    const bed = room.beds[0];
+                    this.showReservationForm(house.id, today, room.id, 0, bed.name, null, bed.id);
+                } else {
+                    alert('No hay casas configuradas.');
+                }
+            },
+
+            closeModal() {
+                document.getElementById('reservationModal').classList.remove('active');
+            },
+
+            previousMonth() {
+                this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() - 1);
+                this.render();
+            },
+
+            nextMonth() {
+                this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + 1);
+                this.render();
+            },
+
+            currentMonthView() {
+                this.currentMonth = new Date();
+                this.render();
+            },
+
+            async saveData() {
+                localStorage.setItem('boardxperience_reservations', JSON.stringify(this.reservations));
+            },
+
+            async syncReservationToSupabase(res) {
+                try {
+                    const payload = {
+                        id: res.id,
+                        bed_id: res.bedId,
+                        guest_name: res.guestName,
+                        guest_email: res.email,
+                        guest_phone: res.phone,
+                        check_in: res.checkIn,
+                        check_out: res.checkOut,
+                        status: res.status,
+                        payment_value: res.paymentValue || 0,
+                        total_paid: res.totalPaid || 0,
+                        payment_method: res.paymentMethod || 'efectivo',
+                        payment_status: res.paymentStatus || 'pendiente',
+                        package_type: res.packageType || 'solo_hospedaje',
+                        surf_level: res.surfLevel || 'principiante',
+                        package_days: res.packageDays || 0,
+                        guest_dni: res.dni || '',
+                        guest_nationality: res.nationality || '',
+                        guest_birthdate: res.birthdate || null,
+                        food_preferences: res.foodPreferences || '',
+                        notes: res.notes || '',
+                        full_house_group_id: res.fullHouseGroupId || null
+                    };
+
+                    const { error } = await supabaseClient
+                        .from('reservations')
+                        .upsert(payload);
+
+                    if (error) {
+                        console.error('Error Supabase:', error);
+                        // Si el error es que la tabla no existe, avisar al usuario
+                        if (error.code === '42P01') {
+                            alert('⚠️ La tabla "reservations" no existe en Supabase. Por favor, ejecuta el script SUPABASE_SETUP.sql en el editor SQL de Supabase.');
+                        }
+                        return false;
+                    }
+                    return true;
+                } catch (error) {
+                    console.error('Error sincronizando con Supabase:', error);
+                    return false;
+                }
+            }
+            ,
+
+            exportData() {
+                const dataStr = JSON.stringify(this.reservations, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `boardxperience-reservas-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            },
+
+            importData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            this.reservations = JSON.parse(event.target.result);
+                            this.saveData();
+                            this.render();
+                            alert('Datos importados correctamente');
+                        } catch (error) {
+                            alert('Error al importar datos');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            },
+
+            async migrateInitialDataToSupabase() {
+                try {
+                    for (const houseData of this.houses) {
+                        const { data: house, error: hErr } = await supabaseClient
+                            .from('houses')
+                            .insert({
+                                name: houseData.name,
+                                icon: houseData.icon,
+                                subtitle: houseData.subtitle
+                            })
+                            .select()
+                            .single();
+
+                        if (hErr) throw hErr;
+
+                        for (const roomData of houseData.rooms) {
+                            const { data: room, error: rErr } = await supabaseClient
+                                .from('rooms')
+                                .insert({
+                                    house_id: house.id,
+                                    name: roomData.name,
+                                    type: roomData.type
+                                })
+                                .select()
+                                .single();
+
+                            if (rErr) throw rErr;
+
+                            for (const bedName of roomData.beds) {
+                                const { error: bErr } = await supabaseClient
+                                    .from('beds')
+                                    .insert({
+                                        room_id: room.id,
+                                        name: bedName
+                                    });
+                                if (bErr) throw bErr;
+                            }
+                        }
+                    }
+                    console.log('Migración completada con éxito.');
+                    location.reload();
+                } catch (error) {
+                    console.error('Error en migración:', error);
+                    alert('Error durante la migración: ' + error.message);
+                }
+            }
+        };
+
+        const modal = document.getElementById('reservationModal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'reservationModal') {
+                    app.closeModal();
+                }
+            });
+        }
+
+        app.init();
+    </script>
+</body>
+
+</html>
