@@ -1372,6 +1372,7 @@
 
             async saveReservation(existingId) {
                 console.log('Iniciando guardado de reserva...', { existingId });
+                const existingRes = existingId ? this.reservations.find(r => r.id === existingId) : null;
 
                 const guestName = document.getElementById('guestName').value;
                 const checkIn = document.getElementById('checkIn').value;
@@ -1448,7 +1449,7 @@
                     roomId,
                     bedIndex,
                     bedName,
-                    fullHouseGroupId: (res && res.fullHouseGroupId) || null
+                    fullHouseGroupId: (existingRes && existingRes.fullHouseGroupId) || null
                 };
 
                 try {
