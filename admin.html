@@ -520,8 +520,18 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏠 BoardXperience - Sistema de Reservas</h1>
-            <p class="subtitle">Gestión de huéspedes y disponibilidad de casas</p>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1>🏠 BoardXperience - Sistema de Reservas</h1>
+                    <p class="subtitle">Gestión de huéspedes y disponibilidad de casas</p>
+                </div>
+                <div id="pendingNotifications"
+                    style="display: none; background: #fbbf24; padding: 12px 20px; border-radius: 30px; border: 2px solid #d97706; font-weight: 800; color: #78350f; animation: pulse-pending 2s infinite; cursor: pointer; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); font-size: 14px; align-items: center; gap: 10px;"
+                    onclick="app.showPendingRequests()">
+                    <span style="font-size: 18px;">🔔</span> <span id="pendingCount">0</span> Solicitudes Pendientes
+                </div>
+            </div>
         </header>
 
         <div class="controls">
@@ -725,6 +735,28 @@
                 const container = document.getElementById('housesContainer');
                 if (!container) return;
                 container.innerHTML = this.houses.map(house => this.renderHouse(house)).join('');
+                this.renderNotifications();
+            },
+
+            renderNotifications() {
+                const pending = this.reservations.filter(r => r.status === 'pendiente');
+                const badge = document.getElementById('pendingNotifications');
+                const count = document.getElementById('pendingCount');
+
+                if (pending.length > 0) {
+                    badge.style.display = 'flex';
+                    count.textContent = pending.length;
+                } else {
+                    badge.style.display = 'none';
+                }
+            },
+
+            showPendingRequests() {
+                this.setView('history');
+                document.getElementById('historySearch').value = '';
+                // Simular un render de historial pero solo con las pendientes si quisiéramos, 
+                // o mostrar todo el historial destacado. Vamos a filtrar el historial por 'pendiente'
+                this.renderHistory('pendiente');
             },
 
             renderHouse(house) {
@@ -1252,9 +1284,14 @@
 
                     <div class="modal-footer">
                         <button class="btn btn-secondary" onclick="app.closeModal()">Cancelar</button>
-                        ${existingRes ? `<button class="btn btn-danger" onclick="app.deleteReservation('${res.id}')">Eliminar</button>` : ''}
-                        ${existingRes && res.status === 'pendiente' ? `<button class="btn btn-primary" style="background: #10b981;" onclick="app.approveReservation('${res.id}')">✅ Aceptar Reserva</button>` : ''}
-                        <button class="btn btn-primary" onclick="app.saveReservation(${existingRes ? "'" + res.id + "'" : 'null'})">Guardar Reserva</button>
+                        ${existingRes && res.status !== 'pendiente' ? `<button class="btn btn-danger" onclick="app.deleteReservation('${res.id}')">Eliminar Reserva</button>` : ''}
+                        
+                        ${existingRes && res.status === 'pendiente' ? `
+                            <button class="btn btn-danger" style="background: #f87171;" onclick="app.rejectReservation('${res.id}')">❌ Rechazar Solicitud</button>
+                            <button class="btn btn-primary" style="background: #10b981;" onclick="app.approveReservation('${res.id}')">✅ Aceptar Reserva</button>
+                        ` : ''}
+                        
+                        ${!existingRes || res.status !== 'pendiente' ? `<button class="btn btn-primary" onclick="app.saveReservation(${existingRes ? "'" + res.id + "'" : 'null'})">Guardar Reserva</button>` : ''}
                     </div>
                 `;
                 document.getElementById('modalBody').innerHTML = formHtml;
@@ -1809,14 +1846,22 @@
                 alert('✅ ¡Éxito! Casa completa reservada y todas las camas bloqueadas.');
             },
 
-            renderHistory() {
-                const search = document.getElementById('historySearch').value.toLowerCase();
+            renderHistory(filterStatus = null) {
+                const searchInput = document.getElementById('historySearch');
+                const search = searchInput ? searchInput.value.toLowerCase() : '';
                 const container = document.getElementById('historyResults');
                 if (!container) return;
 
                 // Agrupar reservas por Huésped (usando Nombre + DNI como clave única)
                 const guests = {};
-                this.reservations.forEach(r => {
+                let resToProcess = this.reservations;
+
+                if (filterStatus === 'pendiente') {
+                    resToProcess = this.reservations.filter(r => r.status === 'pendiente');
+                    if (searchInput) searchInput.value = ''; // Limpiar búsqueda si venimos de click en notificación
+                }
+
+                resToProcess.forEach(r => {
                     const key = `${r.guestName.toLowerCase()}_${(r.dni || '').toLowerCase()}`;
                     if (!guests[key]) {
                         guests[key] = {
@@ -1966,6 +2011,29 @@
                 } catch (error) {
                     console.error('Error aprobando reserva:', error);
                     alert('Error al aprobar la reserva.');
+                }
+            },
+
+            async rejectReservation(id) {
+                const res = this.reservations.find(r => r.id === id);
+                if (!res) return;
+
+                if (!confirm(`¿Estás seguro de RECHAZAR la solicitud de ${res.guestName}? Esto la marcará como cancelada.`)) return;
+
+                res.status = 'cancelado';
+                try {
+                    const success = await this.syncReservationToSupabase(res);
+                    if (success) {
+                        this.saveData();
+                        this.closeModal();
+                        this.render();
+                        alert('🚫 Solicitud rechazada (marcada como cancelada).');
+                    } else {
+                        throw new Error('No se pudo sincronizar.');
+                    }
+                } catch (error) {
+                    console.error('Error rechazando reserva:', error);
+                    alert('Error al rechazar la solicitud.');
                 }
             },
 
