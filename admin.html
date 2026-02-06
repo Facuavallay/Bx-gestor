@@ -1922,8 +1922,12 @@
                         ...r,
                         days
                     });
-                    guests[key].totalDays += days;
-                    guests[key].totalSpent += (r.paymentValue || 0);
+
+                    // Solo sumar a totales si NO está cancelada
+                    if (r.status !== 'cancelado') {
+                        guests[key].totalDays += days;
+                        guests[key].totalSpent += (r.paymentValue || 0);
+                    }
                 });
 
                 // Filtrar por pestañas CRM
@@ -1974,20 +1978,38 @@
                             </div>
                             
                             <div style="border-top: 1px solid #e0e0e0; padding-top: 15px;">
-                                <div style="font-size: 12px; font-weight: 600; color: #999; margin-bottom: 10px; text-transform: uppercase;">Estancias Anteriores</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #999; margin-bottom: 10px; text-transform: uppercase;">Cronograma de Reservas</div>
                                 <div style="display: grid; gap: 10px;">
-                                    ${g.history.sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map(h => `
-                                        <div onclick="app.editReservation('${h.id}')" style="cursor: pointer; background: white; padding: 12px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; hover: border-color: #667eea;">
-                                            <div>
-                                                <span style="font-weight: 600; color: #333;">${h.checkIn} al ${h.checkOut}</span>
-                                                <span style="margin: 0 10px; color: #ccc;">|</span>
-                                                <span style="color: #666;">${h.bedName}</span>
-                                                <span style="margin: 0 10px; color: #ccc;">|</span>
-                                                <span style="background: #eef2ff; color: #6366f1; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${h.packageType}</span>
+                                    ${g.history.sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map(h => {
+                                let statusLabel = '';
+                                let statusStyle = '';
+
+                                if (h.status === 'cancelado') {
+                                    statusLabel = '❌ RESERVA CANCELADA';
+                                    statusStyle = 'background: #fee2e2; color: #991b1b;';
+                                } else if (h.checkOut < todayStr) {
+                                    statusLabel = '✅ RESERVA FINALIZADA';
+                                    statusStyle = 'background: #f3f4f6; color: #374151;';
+                                } else if (h.checkIn <= todayStr && h.checkOut >= todayStr) {
+                                    statusLabel = '🌊 ESTADÍA ACTIVA';
+                                    statusStyle = 'background: #dcfce7; color: #166534; font-weight: 800;';
+                                } else {
+                                    statusLabel = '📅 PRÓXIMA RESERVA';
+                                    statusStyle = 'background: #eef2ff; color: #3730a3;';
+                                }
+
+                                return `
+                                            <div onclick="app.editReservation('${h.id}')" style="cursor: pointer; background: white; padding: 12px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; hover: border-color: #667eea;">
+                                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                                    <span style="font-weight: 700; color: #1f2937; min-width: 160px;">${h.checkIn} al ${h.checkOut}</span>
+                                                    <span style="padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; ${statusStyle}">${statusLabel}</span>
+                                                    <span style="color: #6b7280; font-size: 13px;">📍 ${h.bedName}</span>
+                                                    <span style="background: #f8fafc; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; border: 1px solid #e2e8f0;">${h.packageType}</span>
+                                                </div>
+                                                <div style="font-size: 14px; font-weight: 700; color: #333;">R$ ${(h.paymentValue || 0).toFixed(2)}</div>
                                             </div>
-                                            <div style="font-size: 14px; font-weight: 600; color: #333;">R$ ${h.paymentValue.toFixed(2)}</div>
-                                        </div>
-                                    `).join('')}
+                                        `;
+                            }).join('')}
                                 </div>
                             </div>
                         </div>
