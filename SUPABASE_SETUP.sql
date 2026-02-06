@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     payment_status TEXT DEFAULT 'pendiente', -- pendiente, parcial, pagado, cancelado
     notes TEXT,
     full_house_group_id UUID, -- Para identificar reservas que pertenecen a una casa completa
+    payment_history JSONB DEFAULT '[]', -- Historial de pagos realizados
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

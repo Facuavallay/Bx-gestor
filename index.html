@@ -1064,9 +1064,11 @@
                     surfLevel: 'principiante',
                     packageDays: 0,
                     notes: '',
-                    fullHouseGroupId: null
+                    fullHouseGroupId: null,
+                    paymentHistory: []
                 };
 
+                this.currentPayments = res.paymentHistory ? [...res.paymentHistory] : (res.totalPaid > 0 ? [{ amount: res.totalPaid, method: res.paymentMethod || 'efectivo', date: new Date().toISOString().split('T')[0] }] : []);
                 const isGroup = !!res.fullHouseGroupId;
 
                 let formHtml = `
@@ -1182,54 +1184,57 @@
                     </div>
 
                     <div class="form-section">
-                        <div class="section-title">💳 Pagos (R$)</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Precio Total</label>
-                                <input type="number" id="totalPrice" value="${res.paymentValue}" step="0.01" oninput="app.calculateBalance()">
+                        <div class="section-title">💳 Gestión de Pagos (R$)</div>
+                        <div class="form-group">
+                            <label>Precio Total de la Estancia</label>
+                            <input type="number" id="totalPrice" value="${res.paymentValue}" step="0.01" oninput="app.calculateBalance()">
+                        </div>
+                        
+                        <div id="paymentHistoryContainer" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                            <label style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Historial de Pagos</label>
+                            <div id="paymentList" style="margin: 10px 0;">
+                                <!-- Se renderiza dinámicamente -->
                             </div>
-                            <div class="form-group">
-                                <label>Pagado Hoy / Abono</label>
-                                <input type="number" id="addPayment" value="0" step="0.01" placeholder="Sumar pago..." oninput="app.calculateBalance()">
-                            </div>
-                            <div class="form-group">
-                                <label>Total Pagado (Acumulado)</label>
-                                <input type="number" id="totalPaid" value="${res.totalPaid}" step="0.01" oninput="app.calculateBalance()">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <input type="number" id="newPayAmount" placeholder="Monto R$" step="0.01">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <select id="newPayMethod">
+                                        <option value="efectivo">💸 Efectivo</option>
+                                        <option value="transferencia">🏦 Transferencia</option>
+                                        <option value="tarjeta">💳 Tarjeta</option>
+                                        <option value="pix">📱 PIX</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="app.addPaymentFromForm()" style="padding: 0 15px;">+</button>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Método de Pago</label>
-                                <select id="paymentMethod">
-                                    <option value="efectivo" ${res.paymentMethod === 'efectivo' ? 'selected' : ''}>💸 Efectivo</option>
-                                    <option value="transferencia" ${res.paymentMethod === 'transferencia' ? 'selected' : ''}>🏦 Transferencia</option>
-                                    <option value="tarjeta" ${res.paymentMethod === 'tarjeta' ? 'selected' : ''}>💳 Tarjeta</option>
-                                    <option value="pix" ${res.paymentMethod === 'pix' ? 'selected' : ''}>📱 PIX / Digital</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Estado del Pago</label>
-                                <select id="paymentStatus">
-                                    <option value="pendiente" ${res.paymentStatus === 'pendiente' ? 'selected' : ''}>🔴 Pendiente</option>
-                                    <option value="parcial" ${res.paymentStatus === 'parcial' ? 'selected' : ''}>🟡 Pago Parcial</option>
-                                    <option value="pagado" ${res.paymentStatus === 'pagado' ? 'selected' : ''}>🟢 Pagado Total</option>
-                                    <option value="cancelado" ${res.paymentStatus === 'cancelado' ? 'selected' : ''}>⚪ Cancelado</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="payment-section">
+
+                        <div class="payment-section" style="background: #f1f5f9;">
                             <div class="payment-row">
-                                <span class="payment-label">Total:</span>
+                                <span class="payment-label">Total a Cobrar:</span>
                                 <span class="payment-value" id="displayTotal">R$ ${res.paymentValue.toFixed(2)}</span>
                             </div>
                             <div class="payment-row">
-                                <span class="payment-label">Pagado:</span>
+                                <span class="payment-label">Total Cobrado:</span>
                                 <span class="payment-value paid" id="displayPaid">R$ ${res.totalPaid.toFixed(2)}</span>
                             </div>
-                            <div class="payment-row" style="border-top: 1px solid #e0e0e0; margin-top: 5px; padding-top: 10px;">
-                                <span class="payment-label">Saldo Pendiente:</span>
-                                <span class="payment-value pending" id="displayBalance">R$ ${(res.paymentValue - res.totalPaid).toFixed(2)}</span>
+                            <div class="payment-row" style="border-top: 1px solid #cbd5e1; margin-top: 5px; padding-top: 10px;">
+                                <span class="payment-label">Saldo Restante:</span>
+                                <span class="payment-value" id="displayBalance" style="font-size: 1.2rem; font-weight: 800; color: #ef4444;">R$ ${(res.paymentValue - res.totalPaid).toFixed(2)}</span>
                             </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>Estado Sugerido</label>
+                            <select id="paymentStatus" disabled style="background: #f1f5f9; cursor: not-allowed; font-weight: 700;">
+                                <option value="pendiente" ${res.paymentStatus === 'pendiente' ? 'selected' : ''}>🔴 Pendiente</option>
+                                <option value="parcial" ${res.paymentStatus === 'parcial' ? 'selected' : ''}>🟡 Pago Parcial</option>
+                                <option value="pagado" ${res.paymentStatus === 'pagado' ? 'selected' : ''}>🟢 Pagado Total</option>
+                            </select>
+                            <input type="hidden" id="finalPaymentStatus" value="${res.paymentStatus || 'pendiente'}">
                         </div>
                     </div>
 
@@ -1258,6 +1263,8 @@
                 this.updateRoomDropdown(roomId);
                 this.updateBedDropdown(bedId);
                 this.updateNightsAndBeds();
+                this.renderPaymentList();
+                this.calculateBalance();
 
                 document.getElementById('reservationModal').classList.add('active');
             },
@@ -1425,13 +1432,14 @@
                     phone: document.getElementById('guestPhone')?.value || '',
                     birthdate: document.getElementById('guestBirthdate')?.value || '',
                     foodPreferences: document.getElementById('foodPreferences')?.value || '',
-                    paymentMethod: document.getElementById('paymentMethod')?.value || 'efectivo',
-                    paymentStatus: document.getElementById('paymentStatus')?.value || 'pendiente',
                     checkIn,
                     checkOut,
                     status: 'ocupado',
                     paymentValue: parseFloat(document.getElementById('totalPrice')?.value || 0),
-                    totalPaid: (parseFloat(document.getElementById('totalPaid')?.value || 0)) + (parseFloat(document.getElementById('addPayment')?.value || 0)),
+                    totalPaid: this.currentPayments.reduce((sum, p) => sum + p.amount, 0),
+                    paymentHistory: this.currentPayments,
+                    paymentMethod: this.currentPayments.length > 0 ? this.currentPayments[this.currentPayments.length - 1].method : 'efectivo',
+                    paymentStatus: document.getElementById('finalPaymentStatus')?.value || 'pendiente',
                     packageType: document.getElementById('packageType')?.value || 'solo_hospedaje',
                     surfLevel: document.getElementById('surfLevel')?.value || 'principiante',
                     packageDays: parseInt(document.getElementById('packageDays')?.value || 0),
@@ -1440,7 +1448,7 @@
                     roomId,
                     bedIndex,
                     bedName,
-                    fullHouseGroupId: res.fullHouseGroupId || null
+                    fullHouseGroupId: (res && res.fullHouseGroupId) || null
                 };
 
                 try {
@@ -1466,19 +1474,83 @@
 
             calculateBalance() {
                 const totalPrice = parseFloat(document.getElementById('totalPrice')?.value || 0);
-                const currentTotalPaid = parseFloat(document.getElementById('totalPaid')?.value || 0);
-                const addPayment = parseFloat(document.getElementById('addPayment')?.value || 0);
-
-                const newTotalPaid = currentTotalPaid + addPayment;
-                const balance = totalPrice - newTotalPaid;
+                const totalPaid = this.currentPayments.reduce((sum, p) => sum + p.amount, 0);
+                const balance = totalPrice - totalPaid;
 
                 if (document.getElementById('displayTotal')) {
                     document.getElementById('displayTotal').textContent = `R$ ${totalPrice.toFixed(2)}`;
-                    document.getElementById('displayPaid').textContent = `R$ ${newTotalPaid.toFixed(2)}`;
+                    document.getElementById('displayPaid').textContent = `R$ ${totalPaid.toFixed(2)}`;
                     document.getElementById('displayBalance').textContent = `R$ ${balance.toFixed(2)}`;
+                    document.getElementById('displayBalance').style.color = balance > 0 ? '#ef4444' : '#10b981';
 
-                    // Actualizar campo oculto o acumulado al guardar podemos capturar esto
+                    // Auto-actualizar estado
+                    const statusSelect = document.getElementById('paymentStatus');
+                    const statusHidden = document.getElementById('finalPaymentStatus');
+
+                    let newStatus = 'pendiente';
+                    if (totalPaid >= totalPrice && totalPrice > 0) newStatus = 'pagado';
+                    else if (totalPaid > 0) newStatus = 'parcial';
+
+                    statusSelect.value = newStatus;
+                    statusHidden.value = newStatus;
                 }
+            },
+
+            addPaymentFromForm() {
+                const amount = parseFloat(document.getElementById('newPayAmount').value);
+                const method = document.getElementById('newPayMethod').value;
+
+                if (isNaN(amount) || amount <= 0) {
+                    alert('Ingresa un monto válido.');
+                    return;
+                }
+
+                this.currentPayments.push({
+                    amount,
+                    method,
+                    date: new Date().toISOString().split('T')[0],
+                    id: Date.now()
+                });
+
+                document.getElementById('newPayAmount').value = '';
+                this.renderPaymentList();
+                this.calculateBalance();
+            },
+
+            removePayment(timestamp) {
+                this.currentPayments = this.currentPayments.filter(p => p.id !== timestamp);
+                this.renderPaymentList();
+                this.calculateBalance();
+            },
+
+            renderPaymentList() {
+                const list = document.getElementById('paymentList');
+                if (!list) return;
+
+                if (this.currentPayments.length === 0) {
+                    list.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 10px;">Sin pagos registrados</div>';
+                    return;
+                }
+
+                list.innerHTML = this.currentPayments.map(p => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; border: 1px solid #e2e8f0; font-size: 13px;">
+                        <div>
+                            <span style="font-weight: 700;">R$ ${p.amount.toFixed(2)}</span>
+                            <span style="color: #64748b; margin-left: 10px;">${this.getPaymentMethodIcon(p.method)}</span>
+                        </div>
+                        <button onclick="app.removePayment(${p.id})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-weight: 800;">✕</button>
+                    </div>
+                `).join('');
+            },
+
+            getPaymentMethodIcon(method) {
+                const icons = {
+                    efectivo: '💸 Efectivo',
+                    transferencia: '🏦 Transf.',
+                    tarjeta: '💳 Tarjeta',
+                    pix: '📱 PIX'
+                };
+                return icons[method] || method;
             },
 
             renderReports() {
@@ -1954,7 +2026,8 @@
                         guest_birthdate: res.birthdate || null,
                         food_preferences: res.foodPreferences || '',
                         notes: res.notes || '',
-                        full_house_group_id: res.fullHouseGroupId || null
+                        full_house_group_id: res.fullHouseGroupId || null,
+                        payment_history: res.paymentHistory || []
                     };
 
                     const { error } = await supabaseClient
