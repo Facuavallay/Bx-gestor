@@ -1033,11 +1033,15 @@
                     packageType: 'solo_hospedaje',
                     surf_level: 'principiante',
                     packageDays: 0,
-                    notes: ''
+                    notes: '',
+                    fullHouseGroupId: null
                 };
+
+                const isGroup = !!res.fullHouseGroupId;
 
                 let formHtml = `
                     <div class="form-section">
+                        ${isGroup ? '<div style="background: #fff5f5; border: 1px solid #feb2b2; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #c53030; font-size: 13px; font-weight: 700;">🏠 ESTA ES UNA RESERVA DE CASA COMPLETA</div>' : ''}
                         <div class="section-title">📅 Fechas de Estancia</div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1404,7 +1408,8 @@
                     houseId,
                     roomId,
                     bedIndex,
-                    bedName
+                    bedName,
+                    fullHouseGroupId: res.fullHouseGroupId || null
                 };
 
                 try {
@@ -1639,12 +1644,12 @@
                 const guests = Array.from(guestInputs).map(i => i.value).filter(v => v.trim() !== '');
 
                 if (guests.length === 0) {
-                    alert('Por favor, indica al menos un nombre para el grupo.');
+                    alert('Por favor, indica al menos un nombre para el grupo (ej: Grupo Surf Argentina).');
                     return;
                 }
 
                 if (checkIn >= checkOut) {
-                    alert('La fecha de salida debe ser posterior a la de entrada.');
+                    alert('⚠️ La fecha de salida debe ser posterior a la de entrada.');
                     return;
                 }
 
@@ -1655,26 +1660,32 @@
 
                 if (overlapping.length > 0) {
                     const names = [...new Set(overlapping.map(r => r.guestName))].join(', ');
-                    alert(`No se puede reservar la casa completa:\n\nYa existen reservas para: ${names} en este periodo.\n\nPara reservar la casa completa, primero debes estar seguro de que las fechas estén totalmente libres.`);
+                    alert(`❌ No se puede reservar la casa completa: Ya hay reservas de ${names} en esas fechas.`);
                     return;
                 }
 
                 const house = this.houses.find(h => h.id === houseId);
                 const groupId = crypto.randomUUID();
-                const guestListStr = "GRUPO: " + guests.join(', ');
+                const mainGuestName = guests[0];
 
+                // Mostrar un loader o mensaje de progreso
+                document.getElementById('modalBody').innerHTML = `<div style="text-align:center; padding: 40px;"><div class="loader"></div><p>Bloqueando todas las camas y creando grupo...</p></div>`;
+
+                let firstBed = true;
                 for (const room of house.rooms) {
                     for (const [bedIndex, bed] of room.beds.entries()) {
                         const reservation = {
                             id: crypto.randomUUID(),
                             bedId: bed.id,
-                            guestName: guests[0] + " (Casa Completa)",
+                            guestName: `${mainGuestName} (Grupo)`,
                             checkIn,
                             checkOut,
                             status: 'ocupado',
-                            paymentValue: (room.id === house.rooms[0].id && bedIndex === 0) ? totalPrice : 0,
-                            totalPaid: (room.id === house.rooms[0].id && bedIndex === 0) ? totalPaid : 0,
-                            notes: `CASA COMPLETA | ${guestListStr} | ${notes}`,
+                            paymentValue: firstBed ? totalPrice : 0,
+                            totalPaid: firstBed ? totalPaid : 0,
+                            paymentMethod: 'transferencia',
+                            paymentStatus: totalPaid >= totalPrice ? 'pagado' : 'parcial',
+                            notes: `🏠 CASA COMPLETA | Grupo: ${guests.join(', ')} | ${notes}`,
                             houseId,
                             roomId: room.id,
                             bedIndex,
@@ -1684,13 +1695,14 @@
 
                         this.reservations.push(reservation);
                         await this.syncReservationToSupabase(reservation);
+                        firstBed = false;
                     }
                 }
 
                 this.saveData();
                 this.closeModal();
                 this.render();
-                alert('Casa completa reservada con éxito.');
+                alert('✅ ¡Éxito! Casa completa reservada y todas las camas bloqueadas.');
             },
 
             renderHistory() {
@@ -1787,23 +1799,46 @@
             },
 
             async deleteReservation(id) {
-                if (confirm('¿Eliminar esta reserva?')) {
-                    try {
+                const res = this.reservations.find(r => r.id === id);
+                if (!res) return;
+
+                const isGroup = !!res.fullHouseGroupId;
+                let deleteMsg = '¿Eliminar esta reserva?';
+                let deleteGroup = false;
+
+                if (isGroup) {
+                    if (confirm('🏠 Esta reserva es parte de una CASA COMPLETA.\n\n¿Deseas eliminar TODO EL GRUPO (todas las camas)?\n\nPresiona OK para eliminar todo el grupo.\nPresiona CANCELAR para eliminar solo esta cama individual.')) {
+                        deleteGroup = true;
+                    } else if (!confirm('¿Seguro que quieres eliminar SOLO esta cama del grupo?')) {
+                        return; // Canceló todo
+                    }
+                } else if (!confirm(deleteMsg)) {
+                    return;
+                }
+
+                try {
+                    const toDelete = deleteGroup
+                        ? this.reservations.filter(r => r.fullHouseGroupId === res.fullHouseGroupId)
+                        : [res];
+
+                    for (const r of toDelete) {
                         const { error } = await supabaseClient
                             .from('reservations')
                             .delete()
-                            .eq('id', id);
-
+                            .eq('id', r.id);
                         if (error) throw error;
-
-                        this.reservations = this.reservations.filter(r => r.id !== id);
-                        this.saveData();
-                        this.closeModal();
-                        this.render();
-                    } catch (error) {
-                        console.error('Error eliminando de Supabase:', error);
-                        alert('Error al eliminar en Supabase');
                     }
+
+                    const idsToDelete = toDelete.map(r => r.id);
+                    this.reservations = this.reservations.filter(r => !idsToDelete.includes(r.id));
+
+                    this.saveData();
+                    this.closeModal();
+                    this.render();
+                    alert(deleteGroup ? '✅ Grupo eliminado correctamente.' : '✅ Reserva eliminada.');
+                } catch (error) {
+                    console.error('Error eliminando de Supabase:', error);
+                    alert('Error al eliminar en Supabase');
                 }
             },
 
