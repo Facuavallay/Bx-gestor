@@ -1995,22 +1995,35 @@
                 const res = this.reservations.find(r => r.id === id);
                 if (!res) return;
 
-                if (!confirm(`¿Aceptar la reserva de ${res.guestName}?`)) return;
+                const isGroup = !!res.fullHouseGroupId;
+                let approveGroup = false;
 
-                res.status = 'ocupado';
-                try {
-                    const success = await this.syncReservationToSupabase(res);
-                    if (success) {
-                        this.saveData();
-                        this.closeModal();
-                        this.render();
-                        alert('✅ Reserva aceptada y confirmada.');
-                    } else {
-                        throw new Error('No se pudo sincronizar.');
+                if (isGroup) {
+                    if (confirm(`🏠 Esta solicitud es parte de una CASA COMPLETA.\n\n¿Deseas ACEPTAR TODO EL GRUPO (las todas camas)?\n\nOK = Aceptar grupo completo\nCANCELAR = Aceptar solo esta cama`)) {
+                        approveGroup = true;
                     }
+                } else if (!confirm(`¿Aceptar la reserva de ${res.guestName}?`)) {
+                    return;
+                }
+
+                try {
+                    const toApprove = approveGroup
+                        ? this.reservations.filter(r => r.fullHouseGroupId === res.fullHouseGroupId)
+                        : [res];
+
+                    for (const r of toApprove) {
+                        r.status = 'ocupado';
+                        const success = await this.syncReservationToSupabase(r);
+                        if (!success) throw new Error(`Error sincronizando cama: ${r.bedName}`);
+                    }
+
+                    this.saveData();
+                    this.closeModal();
+                    this.render();
+                    alert(approveGroup ? '✅ ¡Grupo aceptado por completo!' : '✅ Reserva aceptada.');
                 } catch (error) {
                     console.error('Error aprobando reserva:', error);
-                    alert('Error al aprobar la reserva.');
+                    alert('Error al aprobar la reserva: ' + error.message);
                 }
             },
 
@@ -2018,22 +2031,35 @@
                 const res = this.reservations.find(r => r.id === id);
                 if (!res) return;
 
-                if (!confirm(`¿Estás seguro de RECHAZAR la solicitud de ${res.guestName}? Esto la marcará como cancelada.`)) return;
+                const isGroup = !!res.fullHouseGroupId;
+                let rejectGroup = false;
 
-                res.status = 'cancelado';
-                try {
-                    const success = await this.syncReservationToSupabase(res);
-                    if (success) {
-                        this.saveData();
-                        this.closeModal();
-                        this.render();
-                        alert('🚫 Solicitud rechazada (marcada como cancelada).');
-                    } else {
-                        throw new Error('No se pudo sincronizar.');
+                if (isGroup) {
+                    if (confirm(`🏠 Esta solicitud es parte de una CASA COMPLETA.\n\n¿Deseas RECHAZAR TODO EL GRUPO (todas las camas)?\n\nOK = Rechazar grupo completo\nCANCELAR = Rechazar solo esta cama`)) {
+                        rejectGroup = true;
                     }
+                } else if (!confirm(`¿Estás seguro de RECHAZAR la solicitud de ${res.guestName}?`)) {
+                    return;
+                }
+
+                try {
+                    const toReject = rejectGroup
+                        ? this.reservations.filter(r => r.fullHouseGroupId === res.fullHouseGroupId)
+                        : [res];
+
+                    for (const r of toReject) {
+                        r.status = 'cancelado';
+                        const success = await this.syncReservationToSupabase(r);
+                        if (!success) throw new Error(`Error sincronizando cama: ${r.bedName}`);
+                    }
+
+                    this.saveData();
+                    this.closeModal();
+                    this.render();
+                    alert(rejectGroup ? '🚫 Grupo rechazado por completo.' : '🚫 Solicitud rechazada.');
                 } catch (error) {
                     console.error('Error rechazando reserva:', error);
-                    alert('Error al rechazar la solicitud.');
+                    alert('Error al rechazar la solicitud: ' + error.message);
                 }
             },
 
