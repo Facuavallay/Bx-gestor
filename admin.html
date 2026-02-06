@@ -558,6 +558,16 @@
                     <input type="text" id="historySearch" placeholder="Buscar por nombre, email o DNI..."
                         oninput="app.renderHistory()" style="font-size: 16px; padding: 15px;">
                 </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-secondary crm-tab active" onclick="app.setCRMFilter('all', this)"
+                        style="flex: 1;">👥 Todos</button>
+                    <button class="btn btn-secondary crm-tab" onclick="app.setCRMFilter('active', this)"
+                        style="flex: 1;">🌊 En Casa (Activos)</button>
+                    <button class="btn btn-secondary crm-tab" onclick="app.setCRMFilter('past', this)"
+                        style="flex: 1;">🔙 Ya se fueron (Inactivos)</button>
+                </div>
+
                 <div id="historyResults" style="margin-top: 20px;">
                     <!-- Los resultados se cargarán aquí -->
                 </div>
@@ -1848,6 +1858,21 @@
                 alert('✅ ¡Éxito! Casa completa reservada y todas las camas bloqueadas.');
             },
 
+            currentCRMFilter: 'all',
+
+            setCRMFilter(filter, element) {
+                this.currentCRMFilter = filter;
+                document.querySelectorAll('.crm-tab').forEach(el => {
+                    el.classList.remove('active');
+                    el.style.background = '#f0f0f0';
+                    el.style.color = '#333';
+                });
+                element.classList.add('active');
+                element.style.background = '#667eea';
+                element.style.color = 'white';
+                this.renderHistory();
+            },
+
             renderHistory(filterStatus = null) {
                 const searchInput = document.getElementById('historySearch');
                 const search = searchInput ? searchInput.value.toLowerCase() : '';
@@ -1863,6 +1888,8 @@
                     if (searchInput) searchInput.value = ''; // Limpiar búsqueda si venimos de click en notificación
                 }
 
+                const todayStr = new Date().toISOString().split('T')[0];
+
                 resToProcess.forEach(r => {
                     const key = `${r.guestName.toLowerCase()}_${(r.dni || '').toLowerCase()}`;
                     if (!guests[key]) {
@@ -1876,7 +1903,8 @@
                             food: r.foodPreferences,
                             history: [],
                             totalDays: 0,
-                            totalSpent: 0
+                            totalSpent: 0,
+                            isActive: false
                         };
                     }
 
@@ -1884,6 +1912,11 @@
                     const start = new Date(r.checkIn);
                     const end = new Date(r.checkOut);
                     const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+                    // Determinar si es activo (está en el camp ahora y está 'ocupado')
+                    if (r.status === 'ocupado' && r.checkIn <= todayStr && r.checkOut >= todayStr) {
+                        guests[key].isActive = true;
+                    }
 
                     guests[key].history.push({
                         ...r,
@@ -1893,8 +1926,16 @@
                     guests[key].totalSpent += (r.paymentValue || 0);
                 });
 
+                // Filtrar por pestañas CRM
+                let filteredKeys = Object.keys(guests);
+                if (this.currentCRMFilter === 'active') {
+                    filteredKeys = filteredKeys.filter(key => guests[key].isActive);
+                } else if (this.currentCRMFilter === 'past') {
+                    filteredKeys = filteredKeys.filter(key => !guests[key].isActive);
+                }
+
                 // Filtrar por búsqueda
-                const filteredKeys = Object.keys(guests).filter(key => {
+                filteredKeys = filteredKeys.filter(key => {
                     const g = guests[key];
                     return g.name.toLowerCase().includes(search) ||
                         (g.email || '').toLowerCase().includes(search) ||
@@ -1912,7 +1953,12 @@
                         <div style="background: #f9fafb; border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                                 <div>
-                                    <h3 style="color: #333; font-size: 18px; margin-bottom: 5px;">${g.name}</h3>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                        <h3 style="color: #333; font-size: 18px;">${g.name}</h3>
+                                        ${g.isActive
+                            ? '<span style="background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; border: 1px solid #166534;">🌊 EN CASA</span>'
+                            : '<span style="background: #f3f4f6; color: #6b7280; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">🔙 ANTIGUO</span>'}
+                                    </div>
                                     <div style="display: flex; gap: 15px; font-size: 13px; color: #666;">
                                         <span>🆔 DNI: ${g.dni || 'No reg.'}</span>
                                         <span>🌍 ${g.nationality || 'Sin nac.'}</span>
