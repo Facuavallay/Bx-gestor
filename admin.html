@@ -721,7 +721,9 @@
                                 foodPreferences: r.food_preferences,
                                 paymentMethod: r.payment_method,
                                 paymentStatus: r.payment_status,
-                                notes: r.notes
+                                notes: r.notes,
+                                fullHouseGroupId: r.full_house_group_id,
+                                paymentHistory: r.payment_history || []
                             };
                         });
                     }
@@ -1999,11 +2001,18 @@
                 let approveGroup = false;
 
                 if (isGroup) {
-                    if (confirm(`🏠 Esta solicitud es parte de una CASA COMPLETA.\n\n¿Deseas ACEPTAR TODO EL GRUPO (las todas camas)?\n\nOK = Aceptar grupo completo\nCANCELAR = Aceptar solo esta cama`)) {
+                    const groupResponse = confirm(`🏠 Esta solicitud es parte de una CASA COMPLETA.\n\n¿Deseas ACEPTAR TODO EL GRUPO (las todas camas)?\n\nPresiona OK para aceptar el grupo completo.\nPresiona CANCELAR para decidir si aceptas solo esta cama.`);
+
+                    if (groupResponse) {
                         approveGroup = true;
+                    } else {
+                        // Si dijo que NO al grupo, preguntamos si al menos quiere esta cama sola
+                        if (!confirm(`¿Deseas ACEPTAR SOLO esta cama individual para ${res.guestName}?`)) {
+                            return; // No aceptó ni grupo ni individual
+                        }
                     }
-                } else if (!confirm(`¿Aceptar la reserva de ${res.guestName}?`)) {
-                    return;
+                } else {
+                    if (!confirm(`¿Aceptar la reserva de ${res.guestName}?`)) return;
                 }
 
                 try {
@@ -2035,11 +2044,18 @@
                 let rejectGroup = false;
 
                 if (isGroup) {
-                    if (confirm(`🏠 Esta solicitud es parte de una CASA COMPLETA.\n\n¿Deseas RECHAZAR TODO EL GRUPO (todas las camas)?\n\nOK = Rechazar grupo completo\nCANCELAR = Rechazar solo esta cama`)) {
+                    const groupResponse = confirm(`🏠 Esta solicitud es parte de una CASA COMPLETA.\n\n¿Deseas RECHAZAR TODO EL GRUPO (todas las camas)?\n\nPresiona OK para rechazar el grupo completo.\nPresiona CANCELAR para decidir si rechazas solo esta cama.`);
+
+                    if (groupResponse) {
                         rejectGroup = true;
+                    } else {
+                        // Si dijo que NO al grupo, preguntamos si al menos quiere rechazar esta cama sola
+                        if (!confirm(`¿Deseas RECHAZAR SOLO esta cama individual para ${res.guestName}?`)) {
+                            return; // No rechazó ni grupo ni individual
+                        }
                     }
-                } else if (!confirm(`¿Estás seguro de RECHAZAR la solicitud de ${res.guestName}?`)) {
-                    return;
+                } else {
+                    if (!confirm(`¿Estás seguro de RECHAZAR la solicitud de ${res.guestName}?`)) return;
                 }
 
                 try {
