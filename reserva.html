@@ -339,9 +339,10 @@
     </div>
 
     <script>
-        let houses = [];
         let reservations = [];
         let selectedBedId = null;
+        let isFullHouseSelection = false;
+        let selectedHouseId = null;
 
         async function init() {
             try {
@@ -399,9 +400,41 @@
             if (freshRes) reservations = freshRes;
 
             const house = houses.find(h => h.id == houseId);
+            selectedHouseId = houseId;
             grid.innerHTML = '';
 
-            let foundAny = false;
+            // 1. Chequear si la CASA COMPLETA está disponible
+            let houseBeds = [];
+            house.rooms.forEach(r => houseBeds.push(...r.beds));
+
+            const occupiedBedsInHouse = houseBeds.filter(bed => {
+                return reservations.some(res =>
+                    res.bed_id === bed.id &&
+                    res.status !== 'cancelado' &&
+                    res.check_in < checkOut &&
+                    res.check_out > checkIn
+                );
+            });
+
+            const isFullHouseAvailable = occupiedBedsInHouse.length === 0;
+
+            if (isFullHouseAvailable) {
+                const fhCard = document.createElement('div');
+                fhCard.className = 'room-option';
+                fhCard.style.gridColumn = "1 / -1";
+                fhCard.style.border = "3px solid #667eea";
+                fhCard.style.background = "#f0f4ff";
+                fhCard.innerHTML = `
+                    <div style="font-size: 1.5rem; margin-bottom: 5px;">🏡 TODO EL CAMP (Casa Completa)</div>
+                    <p>Reserva la casa entera para tu grupo con total privacidad.</p>
+                    <div class="availability-badge available">¡Disponible para tu grupo!</div>
+                `;
+                fhCard.onclick = () => selectFullHouse(fhCard);
+                grid.appendChild(fhCard);
+            }
+
+            // 2. Mostrar habitaciones individuales
+            let foundAny = isFullHouseAvailable;
 
             house.rooms.forEach(room => {
                 // Buscamos si hay al menos una cama disponible en esta habitación
@@ -446,7 +479,21 @@
             document.querySelectorAll('.room-option').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
             selectedBedId = bedId;
+            isFullHouseSelection = false;
 
+            enablePersonalData();
+        }
+
+        function selectFullHouse(element) {
+            document.querySelectorAll('.room-option').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            isFullHouseSelection = true;
+            selectedBedId = null;
+
+            enablePersonalData();
+        }
+
+        function enablePersonalData() {
             const personal = document.getElementById('personalData');
             personal.style.opacity = "1";
             personal.style.pointerEvents = "all";
@@ -472,24 +519,36 @@
             btn.innerHTML = '<span class="loader"></span> Enviando...';
 
             try {
-                const { error } = await supabaseClient
-                    .from('reservations')
-                    .insert({
-                        id: crypto.randomUUID(),
-                        bed_id: selectedBedId,
-                        guest_name: guestName,
-                        guest_email: guestEmail,
-                        guest_phone: guestPhone,
-                        check_in: checkIn,
-                        check_out: checkOut,
-                        status: 'pendiente',
-                        surf_level: surfLevel,
-                        notes: notes,
-                        payment_value: 0, // Admin definirá el precio o se hablará luego
-                        total_paid: 0
-                    });
+                const groupId = isFullHouseSelection ? crypto.randomUUID() : null;
+                const house = houses.find(h => h.id == selectedHouseId);
 
-                if (error) throw error;
+                let bedsToReserve = [];
+                if (isFullHouseSelection) {
+                    house.rooms.forEach(r => bedsToReserve.push(...r.beds));
+                } else {
+                    bedsToReserve = [{ id: selectedBedId }];
+                }
+
+                for (const bed of bedsToReserve) {
+                    const { error } = await supabaseClient
+                        .from('reservations')
+                        .insert({
+                            id: crypto.randomUUID(),
+                            bed_id: bed.id,
+                            guest_name: isFullHouseSelection ? `${guestName} (CASA COMPLETA)` : guestName,
+                            guest_email: guestEmail,
+                            guest_phone: guestPhone,
+                            check_in: checkIn,
+                            check_out: checkOut,
+                            status: 'pendiente',
+                            surf_level: surfLevel,
+                            notes: isFullHouseSelection ? `🏠 SOLICITUD CASA COMPLETA | ${notes}` : notes,
+                            payment_value: 0,
+                            total_paid: 0,
+                            full_house_group_id: groupId
+                        });
+                    if (error) throw error;
+                }
 
                 document.getElementById('bookingForm').style.display = 'none';
                 document.getElementById('successMessage').style.display = 'block';
