@@ -29,7 +29,7 @@
         }
 
         .hero {
-            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1502680390469-be75c86b636f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('hero.jpg');
             background-size: cover;
             background-position: center;
             height: 40vh;
@@ -39,6 +39,12 @@
             text-align: center;
             color: white;
             padding: 20px;
+            transition: background 0.5s ease-in-out;
+        }
+
+        /* Fallback if hero.jpg doesn't exist */
+        .hero.default-bg {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1920&q=80');
         }
 
         .hero h1 {
@@ -254,10 +260,10 @@
 
 <body>
 
-    <section class="hero">
+    <section class="hero default-bg" id="mainHero">
         <div>
-            <h1>Vive la Xperience 🌊</h1>
-            <p>Reserva tu lugar en BoardXperience Surf Camp</p>
+            <h1 id="heroTitle">Vive la Xperience 🌊</h1>
+            <p id="heroSubtitle">Reserva tu lugar en BoardXperience Surf Camp</p>
         </div>
     </section>
 
@@ -358,10 +364,13 @@
                 houses.forEach((h, i) => {
                     const opt = document.createElement('option');
                     opt.value = h.id;
-                    opt.textContent = `${h.icon} ${h.name}`;
+                    opt.textContent = `${h.icon || '🏠'} ${h.name}`;
                     if (i === 0) opt.selected = true;
                     select.appendChild(opt);
                 });
+
+                // Set initial hero if first house has image
+                if (houses.length > 0) updateHeroImage(houses[0].id);
 
                 // Cargar todas las reservas actuales para checkear solapamientos
                 const { data: resData, error: rErr } = await supabaseClient
@@ -387,6 +396,8 @@
             const checkOut = document.getElementById('checkOut').value;
             const houseId = document.getElementById('houseSelect').value;
             const grid = document.getElementById('roomsGrid');
+
+            updateHeroImage(houseId);
 
             if (!checkIn || !checkOut || !houseId) return;
 
@@ -472,6 +483,25 @@
 
             if (!foundAny) {
                 grid.innerHTML = '<p style="color: #f44336; text-align: center; width: 100%;">Lo sentimos, no hay camas disponibles para esas fechas en esta casa.</p>';
+            }
+        }
+
+        function updateHeroImage(houseId) {
+            const house = houses.find(h => h.id == houseId);
+            const hero = document.getElementById('mainHero');
+            const hTitle = document.getElementById('heroTitle');
+            const hSubtitle = document.getElementById('heroSubtitle');
+
+            if (house && house.image_url) {
+                hero.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${house.image_url}')`;
+                hero.classList.remove('default-bg');
+                hTitle.textContent = house.name;
+                hSubtitle.textContent = house.subtitle || 'BoardXperience Surf Camp';
+            } else {
+                hero.className = 'hero default-bg';
+                hero.style.backgroundImage = ''; // Clear inline style if present
+                hTitle.textContent = 'Vive la Xperience 🌊';
+                hSubtitle.textContent = 'Reserva tu lugar en BoardXperience Surf Camp';
             }
         }
 

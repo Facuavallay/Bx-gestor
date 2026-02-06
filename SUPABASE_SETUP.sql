@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS houses (
     name TEXT NOT NULL,
     icon TEXT,
     subtitle TEXT,
+    image_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
