@@ -234,6 +234,25 @@
             background: #f44336;
         }
 
+        .bed-dot.pendiente {
+            background: #fbbf24;
+            animation: pulse-pending 2s infinite;
+        }
+
+        @keyframes pulse-pending {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
         .bed-dot.checking-out {
             background: linear-gradient(135deg, #f44336 50%, #4caf50 50%);
         }
@@ -741,11 +760,13 @@
                     const guestExiting = this.reservations.find(r => r.bedId === bed.id && r.checkOut === today);
                     const guestEntering = this.reservations.find(r => r.bedId === bed.id && r.checkIn === today);
                     const guestStaying = this.reservations.find(r => r.bedId === bed.id && r.checkIn < today && r.checkOut > today);
+                    const guestPending = this.reservations.find(r => r.bedId === bed.id && r.checkIn <= today && r.checkOut >= today && r.status === 'pendiente');
+
 
                     let statusColor = '#10b981'; // Default available (green)
                     let statusText = 'Disponible';
 
-                    if (guestExiting && guestEntering) {
+                    if (guestExExiting && guestEntering) {
                         statusColor = '#667eea'; // Transition (Indigo/Blue)
                         statusText = `🔄 Sale ${guestExiting.guestName} / Entra ${guestEntering.guestName}`;
                     } else if (guestExiting) {
@@ -754,14 +775,17 @@
                     } else if (guestEntering) {
                         statusColor = '#3b82f6'; // Checking in (Blue)
                         statusText = `📥 Entra: ${guestEntering.guestName}`;
+                    } else if (guestPending) {
+                        statusColor = '#fbbf24'; // Pending (Yellow)
+                        statusText = `🟡 Pendiente: ${guestPending.guestName}`;
                     } else if (guestStaying) {
                         statusColor = '#ef4444'; // Occupied (Red)
                         statusText = guestStaying.guestName;
                     }
 
-                    const isAvailable = !guestExiting && !guestEntering && !guestStaying;
+                    const isAvailable = !guestExiting && !guestEntering && !guestStaying && !guestPending;
                     return `
-                                            <div onclick="app.handleBedClick(${house.id}, ${room.id}, ${index}, '${bed.name}', '${bed.id}')" style="cursor: pointer; padding: 10px; background: white; border: 2px solid ${isAvailable ? '#10b981' : '#ef4444'}; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
+                                            <div onclick="app.handleBedClick(${house.id}, ${room.id}, ${index}, '${bed.name}', '${bed.id}')" style="cursor: pointer; padding: 10px; background: white; border: 2px solid ${isAvailable ? '#10b981' : statusColor}; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
                                                 <span style="font-size: 18px;">🛏️</span>
                                                 <div style="flex: 1;">
                                                     <div style="font-size: 14px; color: #333;">${bed.name}</div>
@@ -853,6 +877,10 @@
                                 <span>Disponible</span>
                             </div>
                             <div class="legend-item">
+                                <div class="legend-dot" style="background: #fbbf24;"></div>
+                                <span>Solicitud Pendiente</span>
+                            </div>
+                            <div class="legend-item">
                                 <div class="legend-dot" style="background: #f44336;"></div>
                                 <span>Ocupado</span>
                             </div>
@@ -898,6 +926,7 @@
                         if (isCheckingOut && isCheckingIn) status = 'shared';
                         else if (isCheckingOut) status = 'checking-out';
                         else if (isCheckingIn) status = 'checking-in';
+                        else if (this.reservations.some(r => r.bedId === bed.id && r.checkIn <= date && r.checkOut >= date && r.status === 'pendiente')) status = 'pendiente';
                         else if (isStaying) status = 'occupied';
 
                         statuses.push(status);
@@ -923,7 +952,8 @@
                     'occupied': 'Ocupado',
                     'checking-out': 'Check-out hoy',
                     'checking-in': 'Check-in hoy',
-                    'shared': 'Transición (Salida/Entrada)'
+                    'shared': 'Transición (Salida/Entrada)',
+                    'pendiente': 'Solicitud Pendiente'
                 };
                 return texts[status] || status;
             },
@@ -1031,7 +1061,7 @@
                     paymentValue: 0,
                     totalPaid: 0,
                     packageType: 'solo_hospedaje',
-                    surf_level: 'principiante',
+                    surfLevel: 'principiante',
                     packageDays: 0,
                     notes: '',
                     fullHouseGroupId: null
@@ -1218,6 +1248,7 @@
                     <div class="modal-footer">
                         <button class="btn btn-secondary" onclick="app.closeModal()">Cancelar</button>
                         ${existingRes ? `<button class="btn btn-danger" onclick="app.deleteReservation('${res.id}')">Eliminar</button>` : ''}
+                        ${existingRes && res.status === 'pendiente' ? `<button class="btn btn-primary" style="background: #10b981;" onclick="app.approveReservation('${res.id}')">✅ Aceptar Reserva</button>` : ''}
                         <button class="btn btn-primary" onclick="app.saveReservation(${existingRes ? "'" + res.id + "'" : 'null'})">Guardar Reserva</button>
                     </div>
                 `;
@@ -1839,6 +1870,29 @@
                 } catch (error) {
                     console.error('Error eliminando de Supabase:', error);
                     alert('Error al eliminar en Supabase');
+                }
+            },
+
+            async approveReservation(id) {
+                const res = this.reservations.find(r => r.id === id);
+                if (!res) return;
+
+                if (!confirm(`¿Aceptar la reserva de ${res.guestName}?`)) return;
+
+                res.status = 'ocupado';
+                try {
+                    const success = await this.syncReservationToSupabase(res);
+                    if (success) {
+                        this.saveData();
+                        this.closeModal();
+                        this.render();
+                        alert('✅ Reserva aceptada y confirmada.');
+                    } else {
+                        throw new Error('No se pudo sincronizar.');
+                    }
+                } catch (error) {
+                    console.error('Error aprobando reserva:', error);
+                    alert('Error al aprobar la reserva.');
                 }
             },
 
