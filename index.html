@@ -526,10 +526,18 @@
                     <h1>🏠 BoardXperience - Sistema de Reservas</h1>
                     <p class="subtitle">Gestión de huéspedes y disponibilidad de casas</p>
                 </div>
-                <div id="pendingNotifications"
-                    style="display: none; background: #fbbf24; padding: 12px 20px; border-radius: 30px; border: 2px solid #d97706; font-weight: 800; color: #78350f; animation: pulse-pending 2s infinite; cursor: pointer; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); font-size: 14px; align-items: center; gap: 10px;"
-                    onclick="app.showPendingRequests()">
-                    <span style="font-size: 18px;">🔔</span> <span id="pendingCount">0</span> Solicitudes Pendientes
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="nextCheckInAlert"
+                        style="display: none; background: #ecfdf5; padding: 12px 20px; border-radius: 30px; border: 2px solid #10b981; font-weight: 700; color: #065f46; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); font-size: 14px; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">🧹</span> <span id="checkInInfo">Calculando próximos
+                            ingresos...</span>
+                    </div>
+
+                    <div id="pendingNotifications"
+                        style="display: none; background: #fbbf24; padding: 12px 20px; border-radius: 30px; border: 2px solid #d97706; font-weight: 800; color: #78350f; animation: pulse-pending 2s infinite; cursor: pointer; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); font-size: 14px; align-items: center; gap: 10px;"
+                        onclick="app.showPendingRequests()">
+                        <span style="font-size: 18px;">🔔</span> <span id="pendingCount">0</span> Solicitudes Pendientes
+                    </div>
                 </div>
             </div>
         </header>
@@ -648,6 +656,10 @@
                 if (view === 'history') this.renderHistory();
                 else if (view === 'reports') this.renderReports();
                 else this.render();
+
+                // Siempre actualizar alertas del header independientemente de la vista
+                this.renderNotifications();
+                this.renderCheckInAlert();
             },
 
             async init() {
@@ -748,6 +760,7 @@
                 if (!container) return;
                 container.innerHTML = this.houses.map(house => this.renderHouse(house)).join('');
                 this.renderNotifications();
+                this.renderCheckInAlert();
             },
 
             renderNotifications() {
@@ -760,6 +773,48 @@
                     count.textContent = pending.length;
                 } else {
                     badge.style.display = 'none';
+                }
+            },
+
+            renderCheckInAlert() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayStr = today.toISOString().split('T')[0];
+
+                // Filtrar reservas aceptadas futuras o para hoy
+                const upcoming = this.reservations
+                    .filter(r => r.status === 'ocupado' && r.checkIn >= todayStr)
+                    .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+
+                const alertBox = document.getElementById('nextCheckInAlert');
+                const infoText = document.getElementById('checkInInfo');
+
+                if (upcoming.length > 0) {
+                    const next = upcoming[0];
+                    const checkInDate = new Date(next.checkIn + 'T00:00:00');
+                    const diffTime = checkInDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    alertBox.style.display = 'flex';
+
+                    if (diffDays === 0) {
+                        infoText.innerHTML = `<strong>¡HOY HAY CHECK-IN!</strong> (${next.guestName})`;
+                        alertBox.style.background = '#fff7ed';
+                        alertBox.style.borderColor = '#ea580c';
+                        alertBox.style.color = '#9a3412';
+                    } else if (diffDays === 1) {
+                        infoText.innerHTML = `Próximo check-in: <strong>MAÑANA</strong> (${next.guestName})`;
+                        alertBox.style.background = '#ecfdf5';
+                        alertBox.style.borderColor = '#10b981';
+                        alertBox.style.color = '#065f46';
+                    } else {
+                        infoText.innerHTML = `Próximo check-in en <strong>${diffDays} días</strong> (${next.guestName})`;
+                        alertBox.style.background = '#f0f9ff';
+                        alertBox.style.borderColor = '#0ea5e9';
+                        alertBox.style.color = '#075985';
+                    }
+                } else {
+                    alertBox.style.display = 'none';
                 }
             },
 
