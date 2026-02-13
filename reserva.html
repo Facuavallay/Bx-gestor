@@ -43,7 +43,7 @@
         /* HERO con Video de Surfing */
         .hero {
             position: relative;
-            height: 70vh;
+            height: 85vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -76,7 +76,7 @@
         /* Mobile specific adjustments */
         @media (max-width: 768px) {
             .hero {
-                height: 85vh;
+                height: 90vh;
                 /* Taller on mobile for better immersion */
             }
 
@@ -96,7 +96,7 @@
 
             .booking-card {
                 padding: 30px 20px;
-                margin-top: -60px;
+                margin-top: -80px;
             }
 
             .house-preview-container {
@@ -109,8 +109,9 @@
             inset: 0;
             background: linear-gradient(to bottom,
                     rgba(0, 0, 0, 0.4) 0%,
-                    rgba(0, 0, 0, 0.1) 60%,
-                    rgba(243, 244, 246, 1) 100%);
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(243, 244, 246, 0.8) 85%,
+                    var(--bg-light) 100%);
             z-index: -1;
         }
 
@@ -158,12 +159,16 @@
         }
 
         /* Card principal */
+        /* Card principal con efecto Glassmorphism y unión en degrade */
         .booking-card {
-            background: #ffffff;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.88), #ffffff 150px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-premium);
             padding: 60px;
-            transition: opacity 0.4s ease;
+            transition: all 0.4s ease;
         }
 
         /* Títulos pasos */
@@ -585,8 +590,7 @@
             <p id="heroSubtitle" class="hero-subtitle">
                 Donde las olas perfectas y la buena energía se encuentran. Tu mejor trip está por comenzar.
             </p>
-            <div style="margin-top: 40px; display: flex; gap: 10px; justify-content: flex-start;"
-                class="hero-controls-hint">
+            <div style="margin-top: 40px; display: none;" class="hero-controls-hint">
                 <div
                     style="width: 40px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;">
                     <div id="heroProgress"
