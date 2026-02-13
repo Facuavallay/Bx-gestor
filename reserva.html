@@ -450,6 +450,84 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Calendar Styles */
+        .calendar-wrapper {
+            background: white;
+            border-radius: var(--radius-md);
+            border: 2px solid #f1f5f9;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .calendar-header-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid-ui {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .calendar-day-ui {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .calendar-day-ui:hover:not(.disabled) {
+            background: #f1f5f9;
+        }
+
+        .calendar-day-ui.selected {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        .calendar-day-ui.in-range {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 0;
+        }
+
+        .calendar-day-ui.range-start {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .calendar-day-ui.range-end {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .calendar-day-ui.disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        .calendar-day-ui.today {
+            border: 2px solid var(--primary);
+        }
+
+        .day-name-ui {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-light);
+            padding-bottom: 12px;
+            text-transform: uppercase;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -460,7 +538,7 @@
     <!-- HERO con Video cinematico -->
     <header id="mainHero" class="hero">
         <video id="heroVideo" class="hero-video" autoplay loop muted playsinline
-            poster="https://p0.pxfuel.com/preview/44/149/1015/surf-surfer-surfing-ocean.jpg">
+            poster="fotos_reales/Dron_/panoramica.jpg.jpg">
             <source
                 src="https://assets.mixkit.co/videos/preview/mixkit-surfer-catching-a-wave-in-the-ocean-4431-large.mp4"
                 type="video/mp4">
@@ -501,16 +579,28 @@
                             <!-- opciones se cargan con JS -->
                         </select>
                     </div>
-                    <div class="grid" style="grid-template-columns: 1fr;">
-                        <div class="form-group">
-                            <label for="checkIn">Llegada</label>
-                            <input type="date" id="checkIn" onchange="checkAvailability()" />
+
+                    <div class="calendar-wrapper">
+                        <div class="calendar-header-ui">
+                            <button class="gallery-btn" onclick="changeMonth(-1)"
+                                style="position: static; transform: none; width: 32px; height: 32px;">❮</button>
+                            <h3 id="calendarMonthName" style="margin: 0; font-size: 1.1rem;">Mes Año</h3>
+                            <button class="gallery-btn" onclick="changeMonth(1)"
+                                style="position: static; transform: none; width: 32px; height: 32px;">❯</button>
                         </div>
-                        <div class="form-group">
-                            <label for="checkOut">Salida</label>
-                            <input type="date" id="checkOut" onchange="checkAvailability()" />
+                        <div class="calendar-grid-ui" id="calendarGrid">
+                            <!-- Se carga con JS -->
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.85rem; color: var(--text-light);">
+                            <span id="displayCheckIn">Entrada: -</span>
+                            <span id="displayCheckOut">Salida: -</span>
                         </div>
                     </div>
+
+                    <!-- Hidden inputs for compatibility with existing logic -->
+                    <input type="hidden" id="checkIn" />
+                    <input type="hidden" id="checkOut" />
                 </div>
             </div>
 
@@ -523,10 +613,43 @@
                 </p>
             </div>
 
-            <!-- PASO 3 -->
+            <!-- SERVICIOS EXTRAS -->
+            <div id="extrasSection" style="margin-top: 60px; display: none;">
+                <h2 class="step-title"><span>03.</span> Potenciá tu Experiencia</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+                    <div style="background: white; border-radius: 20px; overflow: hidden; border: 2px solid #f1f5f9; transition: all 0.3s;"
+                        onmouseover="this.style.borderColor='var(--primary)'"
+                        onmouseout="this.style.borderColor='#f1f5f9'">
+                        <div style="height: 220px; overflow: hidden;">
+                            <img src="fotos_reales/surf y video analisis_/Coaching.jpg.JPG"
+                                style="width: 100%; height: 100%; object-fit: cover;" alt="Surf Coaching">
+                        </div>
+                        <div style="padding: 24px;">
+                            <h3 style="margin-bottom: 10px; color: var(--text-dark);">Surf Coaching Pro</h3>
+                            <p style="color: var(--text-light); font-size: 0.95rem;">Perfeccioná tu técnica con nuestros
+                                instructores certificados. Sesiones personalizadas en el agua.</p>
+                        </div>
+                    </div>
+                    <div style="background: white; border-radius: 20px; overflow: hidden; border: 2px solid #f1f5f9; transition: all 0.3s;"
+                        onmouseover="this.style.borderColor='var(--primary)'"
+                        onmouseout="this.style.borderColor='#f1f5f9'">
+                        <div style="height: 220px; overflow: hidden;">
+                            <img src="fotos_reales/surf y video analisis_/Videoanalisis.jpg.JPG"
+                                style="width: 100%; height: 100%; object-fit: cover;" alt="Video Analisis">
+                        </div>
+                        <div style="padding: 24px;">
+                            <h3 style="margin-bottom: 10px; color: var(--text-dark);">Video Análisis</h3>
+                            <p style="color: var(--text-light); font-size: 0.95rem;">Mirá tus olas, corregí errores y
+                                evolucioná más rápido. La herramienta clave para subir de nivel.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 4 -->
             <section id="personalData"
                 style="opacity: 0.2; pointer-events: none; transition: all 0.6s; border-top: 2px solid #f1f5f9; padding-top: 60px; margin-top: 20px;">
-                <h2 class="step-title"><span>03.</span> Detalles Personales</h2>
+                <h2 class="step-title"><span>04.</span> Detalles Personales</h2>
                 <div class="grid">
                     <div class="form-group">
                         <label for="guestName">Nombre de la Reserva</label>
@@ -544,11 +667,15 @@
                     </div>
                     <div class="form-group">
                         <label for="surfLevel">¿Cuál es tu nivel de Surf?</label>
-                        <select id="surfLevel">
+                        <select id="surfLevel" onchange="updateSurfLevelPreview()">
                             <option value="principiante">🏄‍♂️ Principiante (Quiero aprender)</option>
                             <option value="intermedio">🌊 Intermedio (Ya me paro)</option>
                             <option value="avanzado">🔥 Avanzado (Le doy a todo)</option>
                         </select>
+                        <div id="surfLevelPreview"
+                            style="margin-top: 15px; border-radius: 12px; overflow: hidden; height: 120px; display: none; border: 2px solid #f1f5f9;">
+                            <img src="" id="surfLevelImg" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
                     </div>
                 </div>
 
@@ -567,18 +694,25 @@
         </section>
 
         <!-- MENSAJE ÉXITO -->
-        <section id="successMessage" class="booking-card">
-            <span style="font-size: 5rem; display: block; margin-bottom: 24px;">🤙</span>
-            <h2>¡Tu lugar está casi listo!</h2>
-            <p>
-                Recibimos tu solicitud para las fechas: <br>
-                <strong id="summaryDates"
-                    style="color: var(--text-dark); background: #fef3c7; padding: 4px 12px; border-radius: 8px;"></strong>
-            </p>
-            <p>Nos pondremos en contacto contigo vía WhatsApp para confirmar los detalles finales.</p>
-            <button class="btn" onclick="location.reload()" style="max-width: 320px; margin: 40px auto 0;">
-                Hacer otra reserva
-            </button>
+        <section id="successMessage" class="booking-card" style="padding: 0; overflow: hidden;">
+            <div style="height: 250px; position: relative;">
+                <img src="fotos_reales/Dron_/localizacion_panoramica.jpg.jpg"
+                    style="width: 100%; height: 100%; object-fit: cover;" alt="Success">
+                <div style="position: absolute; inset: 0; background: linear-gradient(transparent, white);"></div>
+                <span
+                    style="font-size: 5rem; position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);">🤙</span>
+            </div>
+            <div style="padding: 60px 40px 80px; text-align: center;">
+                <h2 style="font-size: 2rem; margin-bottom: 16px;">¡Tu lugar está casi listo!</h2>
+                <p>
+                    Recibimos tu solicitud para las fechas: <br>
+                    <strong id="summaryDates"
+                        style="color: var(--text-dark); background: #fef3c7; padding: 4px 12px; border-radius: 8px;"></strong>
+                </p>
+                <p>Nos pondremos en contacto contigo vía WhatsApp para confirmar los detalles finales.</p>
+                <button class="btn" onclick="location.reload()" style="max-width: 320px; margin: 40px auto 0;">
+                    Hacer otra reserva
+                </button>
         </section>
     </main>
 
@@ -590,6 +724,11 @@
         let houses = [];
         let currentGalleryIndex = 0;
         let galleryImages = [];
+
+        // Calendar variables
+        let calendarDate = new Date();
+        let rangeStart = null;
+        let rangeEnd = null;
 
         async function init() {
             try {
@@ -614,14 +753,108 @@
                 const { data: resData } = await supabaseClient.from('reservations').select('*');
                 if (resData) reservations = resData;
 
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('checkIn').min = today;
-                document.getElementById('checkOut').min = today;
-
+                renderCalendar();
             } catch (e) {
                 console.error(e);
                 alert("Error cargando el sistema.");
             }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthName = document.getElementById('calendarMonthName');
+            grid.innerHTML = '';
+
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            monthName.textContent = `${months[month]} ${year}`;
+
+            ['D', 'L', 'M', 'M', 'J', 'V', 'S'].forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day-name-ui';
+                dayEl.textContent = day;
+                grid.appendChild(dayEl);
+            });
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day-ui';
+                dayEl.textContent = d;
+
+                if (date < today) {
+                    dayEl.classList.add('disabled');
+                } else {
+                    dayEl.onclick = () => handleDateClick(date);
+
+                    if (rangeStart && date.getTime() === rangeStart.getTime()) dayEl.classList.add('selected', 'range-start');
+                    if (rangeEnd && date.getTime() === rangeEnd.getTime()) dayEl.classList.add('selected', 'range-end');
+                    if (rangeStart && rangeEnd && date > rangeStart && date < rangeEnd) {
+                        dayEl.classList.add('in-range');
+                    }
+                }
+
+                if (date.getTime() === today.getTime()) dayEl.classList.add('today');
+                grid.appendChild(dayEl);
+            }
+        }
+
+        function handleDateClick(date) {
+            if (!rangeStart || (rangeStart && rangeEnd)) {
+                rangeStart = date;
+                rangeEnd = null;
+            } else if (date < rangeStart) {
+                rangeStart = date;
+            } else if (date.getTime() === rangeStart.getTime()) {
+                rangeStart = null;
+            } else {
+                rangeEnd = date;
+            }
+
+            updateDateInputs();
+            renderCalendar();
+            checkAvailability();
+        }
+
+        function updateDateInputs() {
+            const startInput = document.getElementById('checkIn');
+            const endInput = document.getElementById('checkOut');
+            const startDisplay = document.getElementById('displayCheckIn');
+            const endDisplay = document.getElementById('displayCheckOut');
+
+            if (rangeStart) {
+                const dateStr = rangeStart.toISOString().split('T')[0];
+                startInput.value = dateStr;
+                startDisplay.textContent = `Entrada: ${rangeStart.toLocaleDateString()}`;
+            } else {
+                startInput.value = '';
+                startDisplay.textContent = 'Entrada: -';
+            }
+
+            if (rangeEnd) {
+                const dateStr = rangeEnd.toISOString().split('T')[0];
+                endInput.value = dateStr;
+                endDisplay.textContent = `Salida: ${rangeEnd.toLocaleDateString()}`;
+            } else {
+                endInput.value = '';
+                endDisplay.textContent = 'Salida: -';
+            }
+        }
+
+        function changeMonth(step) {
+            calendarDate.setMonth(calendarDate.getMonth() + step);
+            renderCalendar();
         }
 
         function handleHouseChange() {
@@ -630,12 +863,33 @@
             const house = houses.find(h => h.id == houseId);
 
             // Simular multiples fotos por casa (en el futuro vendrá de DB)
-            galleryImages = [
+            // Mapeo de fotos reales por casa
+            const housePhotos = {
+                // BoardXperience House
+                '1': [
+                    'fotos_reales/BoardXperienceHouse/Fachada.jpg.jpg',
+                    'fotos_reales/BoardXperienceHouse/sala_principal.jpg.jpg',
+                    'fotos_reales/BoardXperienceHouse/sala.jpg.jpg',
+                    'fotos_reales/BoardXperienceHouse/cozinha.jpg.jpg',
+                    'fotos_reales/BoardXperienceHouse/quarto_casal.jpg.jpg',
+                    'fotos_reales/BoardXperienceHouse/quarto_triple.jpg.jpg',
+                    'fotos_reales/social exterior/FRA08633.JPG'
+                ],
+                // Casa Vista Mar (Usando compartidas y dron por ahora)
+                '2': [
+                    'fotos_reales/Dron_/vista_casa_arriba.jpg.JPG',
+                    'fotos_reales/BoardXperienceHouse/Fachada.jpg.jpg',
+                    'fotos_reales/Dron_/panoramica.jpg.jpg',
+                    'fotos_reales/social exterior/FRA08638.JPG',
+                    'fotos_reales/social exterior/FRA06755.JPG',
+                    'fotos_reales/Dron_/lagoa_atras_da_praia.jpg.JPG'
+                ]
+            };
+
+            galleryImages = housePhotos[houseId] || [
                 house.image_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
                 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1542718610-a1d656d1884c?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=1200&q=80'
+                'https://images.unsplash.com/photo-1542718610-a1d656d1884c?auto=format&fit=crop&w=1200&q=80'
             ];
 
             updateGallery();
@@ -650,7 +904,7 @@
 
             track.innerHTML = galleryImages.map(img => `
                 <div class="gallery-item">
-                    <img src="${img}" alt="House detail">
+                    <img src="${img}" alt="House detail" onerror="this.src='https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80'">
                 </div>
             `).join('');
 
@@ -669,19 +923,20 @@
         function goToSlide(index) {
             currentGalleryIndex = index;
             const track = document.getElementById('galleryTrack');
-            track.style.transform = `translateX(-${index * 100}%)`;
+            if (track) track.style.transform = `translateX(-${index * 100}%)`;
 
             const dots = document.querySelectorAll('.gallery-dot');
             dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
         }
 
         async function checkAvailability() {
-            const checkIn = document.getElementById('checkIn').value;
-            const checkOut = document.getElementById('checkOut').value;
-            if (!checkIn || !checkOut || !selectedHouseId) return;
+            const startStr = document.getElementById('checkIn').value;
+            const endStr = document.getElementById('checkOut').value;
+            if (!startStr || !endStr || !selectedHouseId) return;
 
             const grid = document.getElementById('roomsGrid');
-            const house = houses.find(h => h.id == selectedHouseId);
+            const house = houses.find(h => String(h.id) === String(selectedHouseId));
+            if (!house) return;
 
             const { data: freshRes } = await supabaseClient.from('reservations').select('*');
             if (freshRes) reservations = freshRes;
@@ -689,39 +944,77 @@
             grid.innerHTML = '';
 
             // CASA COMPLETA
-            let houseBeds = [];
-            house.rooms.forEach(r => houseBeds.push(...r.beds));
-            const isFullHouseAvailable = !houseBeds.some(bed =>
-                reservations.some(res => res.bed_id === bed.id && res.status !== 'cancelado' && res.check_in < checkOut && res.check_out > checkIn)
+            let allBeds = [];
+            house.rooms.forEach(r => { if (r.beds) allBeds.push(...r.beds); });
+
+            const bedsOccupied = allBeds.filter(bed =>
+                reservations.some(res =>
+                    res.bed_id === bed.id &&
+                    res.status !== 'cancelado' &&
+                    res.check_in < endStr &&
+                    res.check_out > startStr
+                )
             );
 
+            const isFullHouseAvailable = allBeds.length > 0 && bedsOccupied.length === 0;
+
+            const fhCard = document.createElement('div');
+            fhCard.className = `room-option full-house-option ${!isFullHouseAvailable ? 'disabled' : ''}`;
+
+            fhCard.innerHTML = `
+                <div class="room-image-container">
+                    <img src="fotos_reales/Dron_/panoramica.jpg.jpg" alt="Full camp">
+                </div>
+                <div class="room-info">
+                    <div class="availability-badge ${isFullHouseAvailable ? 'available' : 'unavailable'}">
+                        ${isFullHouseAvailable ? '✨ ¡Exclusivo! Disponible' : '🔒 Parcialmente reservado'}
+                    </div>
+                    <h3 style="color: white;">EXPERIENCIA CASA COMPLETA</h3>
+                    <p style="color: rgba(255,255,255,0.9);">
+                        ${isFullHouseAvailable
+                    ? 'Reserva todo el resort para tu grupo. Privacidad absoluta y staff dedicado.'
+                    : 'Esta opción no está disponible completa porque hay habitaciones ya reservadas en este periodo.'}
+                    </p>
+                </div>
+            `;
+
             if (isFullHouseAvailable) {
-                const fhCard = document.createElement('div');
-                fhCard.className = 'room-option full-house-option';
-                fhCard.innerHTML = `
-                    <div class="room-image-container">
-                        <img src="${galleryImages[2]}" alt="Full camp">
-                    </div>
-                    <div class="room-info">
-                        <div class="availability-badge">✨ ¡Exclusivo!</div>
-                        <h3>EXPERIENCIA CASA COMPLETA</h3>
-                        <p>Reserva todo el resort para tu grupo. Privacidad absoluta y staff dedicado.</p>
-                    </div>
-                `;
                 fhCard.onclick = () => selectFullHouse(fhCard);
-                grid.appendChild(fhCard);
+            } else {
+                fhCard.style.opacity = '0.6';
+                fhCard.style.filter = 'grayscale(0.3)';
+                fhCard.style.cursor = 'not-allowed';
             }
+            grid.appendChild(fhCard);
 
             house.rooms.forEach(room => {
-                const availableBeds = room.beds.filter(bed => !reservations.some(res => res.bed_id === bed.id && res.status !== 'cancelado' && res.check_in < checkOut && res.check_out > checkIn));
+                const availableBeds = room.beds ? room.beds.filter(bed => !reservations.some(res => res.bed_id === bed.id && res.status !== 'cancelado' && res.check_in < endStr && res.check_out > startStr)) : [];
                 const isFull = availableBeds.length === 0;
-                const roomImg = room.image_url || (room.type === 'PRIVADA' ? galleryImages[3] : galleryImages[4]);
+
+                // Lógica de imágenes realistas
+                let roomImg = room.image_url;
+                const isPrincipalHouse = String(selectedHouseId) === '1';
+
+                if (isPrincipalHouse) {
+                    if (room.name.toLowerCase().includes('triple')) roomImg = 'fotos_reales/BoardXperienceHouse/quarto_triple.jpg.jpg';
+                    else if (room.name.toLowerCase().includes('doble') || room.name.toLowerCase().includes('casal')) roomImg = 'fotos_reales/BoardXperienceHouse/quarto_casal.jpg.jpg';
+                }
+
+                // Fallback inteligente: No usar fotos de la casa principal para otras casas
+                if (!roomImg) {
+                    if (isPrincipalHouse) {
+                        roomImg = 'fotos_reales/BoardXperienceHouse/sala_principal.jpg.jpg';
+                    } else {
+                        // Para otras casas, usar fotos de dron o exteriores generales
+                        roomImg = 'fotos_reales/Dron_/vista_casa_arriba.jpg.JPG';
+                    }
+                }
 
                 const card = document.createElement('div');
                 card.className = `room-option ${isFull ? 'disabled' : ''}`;
                 card.innerHTML = `
                     <div class="room-image-container">
-                        <img src="${roomImg}" alt="${room.name}">
+                        <img src="${roomImg}" alt="${room.name}" onerror="this.src='https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80'">
                     </div>
                     <div class="room-info">
                         <div class="availability-badge ${isFull ? 'unavailable' : 'available'}">${isFull ? 'Ocupado' : availableBeds.length + ' libres'}</div>
@@ -748,7 +1041,9 @@
 
         function enablePersonalData() {
             const p = document.getElementById('personalData');
+            const extras = document.getElementById('extrasSection');
             p.style.opacity = "1"; p.style.pointerEvents = "all";
+            extras.style.display = "block";
             document.getElementById('submitBtn').disabled = false;
         }
 
@@ -783,6 +1078,25 @@
                 btn.disabled = false; btn.innerHTML = 'Confirmar';
             }
         }
+        function updateSurfLevelPreview() {
+            const level = document.getElementById('surfLevel').value;
+            const preview = document.getElementById('surfLevelPreview');
+            const img = document.getElementById('surfLevelImg');
+
+            const levelPhotos = {
+                'principiante': 'fotos_reales/surf y video analisis_/alumna_jpg.JPG',
+                'intermedio': 'fotos_reales/surf y video analisis_/nivel_intermedio.jpg.jpg',
+                'avanzado': 'fotos_reales/surf y video analisis_/nivel_avanzado.jpg.JPG'
+            };
+
+            if (levelPhotos[level]) {
+                img.src = levelPhotos[level];
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
         init();
     </script>
 </body>
