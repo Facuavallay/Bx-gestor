@@ -52,18 +52,56 @@
             overflow: hidden;
         }
 
-        .hero-video {
+        .hero-slider {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            transform: translate(-50%, -50%);
-            object-fit: cover;
+            inset: 0;
             z-index: -2;
-            filter: brightness(0.65);
+        }
+
+        .hero-slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out, transform 10s linear;
+            background-size: cover;
+            background-position: center;
+            transform: scale(1.1);
+        }
+
+        .hero-slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            .hero {
+                height: 85vh;
+                /* Taller on mobile for better immersion */
+            }
+
+            .hero-content {
+                padding: 0 30px;
+                text-align: center;
+            }
+
+            .hero-title {
+                font-size: 2.8rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+                margin: 0 auto;
+            }
+
+            .booking-card {
+                padding: 30px 20px;
+                margin-top: -60px;
+            }
+
+            .house-preview-container {
+                gap: 20px;
+            }
         }
 
         .hero-overlay {
@@ -537,12 +575,9 @@
 <body>
     <!-- HERO con Video cinematico -->
     <header id="mainHero" class="hero">
-        <video id="heroVideo" class="hero-video" autoplay loop muted playsinline
-            poster="fotos_reales/Dron_/panoramica.jpg.jpg">
-            <source
-                src="https://assets.mixkit.co/videos/preview/mixkit-surfer-catching-a-wave-in-the-ocean-4431-large.mp4"
-                type="video/mp4">
-        </video>
+        <div class="hero-slider" id="heroSlider">
+            <!-- Images loaded via JS -->
+        </div>
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <p class="hero-eyebrow">The Ultimate Surf Experience 🌊</p>
@@ -550,6 +585,14 @@
             <p id="heroSubtitle" class="hero-subtitle">
                 Donde las olas perfectas y la buena energía se encuentran. Tu mejor trip está por comenzar.
             </p>
+            <div style="margin-top: 40px; display: flex; gap: 10px; justify-content: flex-start;"
+                class="hero-controls-hint">
+                <div
+                    style="width: 40px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;">
+                    <div id="heroProgress"
+                        style="width: 0%; height: 100%; background: white; transition: width 5s linear;"></div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -1097,7 +1140,59 @@
             }
         }
 
+        // Hero Slider Logic
+        const dronePhotos = [
+            'fotos_reales/Dron_/panoramica.jpg.jpg',
+            'fotos_reales/Dron_/vista_casa_arriba.jpg.JPG',
+            'fotos_reales/Dron_/dji_fly_20241218_075542_123_1734519435580_photo_optimized.jpg',
+            'fotos_reales/Dron_/lagoa_atras_da_praia.jpg.JPG',
+            'fotos_reales/Dron_/localizacion_panoramica.jpg.jpg',
+            'fotos_reales/Dron_/localizaçao.jpg.jpg'
+        ];
+
+        let currentHeroIndex = 0;
+
+        function initHeroSlider() {
+            const slider = document.getElementById('heroSlider');
+            slider.innerHTML = dronePhotos.map((img, i) => `
+                <div class="hero-slide ${i === 0 ? 'active' : ''}" style="background-image: url('${img}')"></div>
+            `).join('');
+
+            setInterval(nextHeroSlide, 5000);
+            updateProgress();
+        }
+
+        function nextHeroSlide() {
+            const slides = document.querySelectorAll('.hero-slide');
+            slides[currentHeroIndex].classList.remove('active');
+            currentHeroIndex = (currentHeroIndex + 1) % dronePhotos.length;
+            slides[currentHeroIndex].classList.add('active');
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progress = document.getElementById('heroProgress');
+            if (!progress) return;
+            progress.style.transition = 'none';
+            progress.style.width = '0%';
+            setTimeout(() => {
+                progress.style.transition = 'width 5s linear';
+                progress.style.width = '100%';
+            }, 50);
+        }
+
+        // Parallax scroll effect
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const hero = document.getElementById('mainHero');
+            const slider = document.getElementById('heroSlider');
+            if (slider) {
+                slider.style.transform = `translateY(${scrolled * 0.4}px)`;
+            }
+        });
+
         init();
+        initHeroSlider();
     </script>
 </body>
 
